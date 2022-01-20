@@ -132,14 +132,15 @@ class DevChannelExtension(
 		name: String = "${member.displayName}-mods"
 	) {
 		// Check if the member already owns a channel
-		devChannelService.getByUserId(member.id.value.toLong())?.channelId?.let { channelId ->
-			kord.getChannel(Snowflake(channelId))?.let { channel ->
+		devChannelService.getByUserId(member.id.value.toLong())?.let { devChannel ->
+			kord.getChannel(Snowflake(devChannel.channelId))?.let { channel ->
 				// Channel already exists!
 				respond { content = "A channel already exists for ${member.mention} -> ${channel.mention}" }
 				return
 			} ?: run {
-				// Channel stored doesn't exist, so ignore and it'll be replaced with the new one later
-				log.warn { "Command createDevChannel: DevChannel for member ${member.id} has invalid channel $channelId... ignoring" }
+				// Channel stored doesn't exist!
+				log.warn { "Command createDevChannel: DevChannel for member ${member.id} has invalid channel ${devChannel.channelId}... removing existing data" }
+				devChannelService.remove(devChannel)
 			}
 		}
 
