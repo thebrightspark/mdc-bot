@@ -86,9 +86,9 @@ class DevChannelExtension(
 				}
 			}
 
-			publicSubCommand(::SetNameArguments) {
+			publicSubCommand(::RenameArguments) {
 				name = "rename"
-				description = "Sets your dev channel's name"
+				description = "Renames your dev channel"
 				check { ownsADevChannel() }
 
 				action {
@@ -198,7 +198,7 @@ class DevChannelExtension(
 		}
 	}
 
-	inner class SetNameArguments : Arguments() {
+	inner class RenameArguments : Arguments() {
 		val name: String by string {
 			name = "name"
 			description = "The dev channel name"
