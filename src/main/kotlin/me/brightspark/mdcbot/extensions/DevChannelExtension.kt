@@ -16,7 +16,6 @@ import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.channel.createTextChannel
 import dev.kord.core.behavior.channel.edit
 import dev.kord.core.entity.Member
-import dev.kord.core.entity.channel.Category
 import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.event.channel.CategoryDeleteEvent
 import dev.kord.core.event.channel.TextChannelDeleteEvent
@@ -27,6 +26,7 @@ import me.brightspark.mdcbot.database.service.DevChannelService
 import me.brightspark.mdcbot.model.PropertyName
 import me.brightspark.mdcbot.service.LoggingService
 import me.brightspark.mdcbot.service.PropertyService
+import me.brightspark.mdcbot.util.getCategory
 import me.brightspark.mdcbot.util.toSimpleString
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -153,13 +153,11 @@ class DevChannelExtension(
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
 		}
-		val category = kord.getChannel(Snowflake(categoryId))
-			?.takeIf { it is Category }?.let { it as Category }
-			?: run {
-				respond { embed { description = "The dev category could not be found!" } }
-				log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
-				return
-			}
+		val category = kord.getCategory(Snowflake(categoryId)) ?: run {
+			respond { embed { description = "The dev category could not be found!" } }
+			log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
+			return
+		}
 
 		// Create new channel
 		val channel = category.createTextChannel(name) {
@@ -170,6 +168,8 @@ class DevChannelExtension(
 				Permissions()
 			)
 		}
+
+		// Send bot message in new channel
 		val botMessage = channel.createEmbed { description = "**Owner:** ${member.mention}" }
 			.apply { pin("Dev channel bot message") }
 
