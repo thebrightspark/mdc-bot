@@ -20,7 +20,7 @@ abstract class BaseExtension(
 	 * Fail if the user is not a server admin or doesn't have the bot admin role
 	 */
 	protected suspend fun CheckContext<ApplicationInteractionCreateEvent>.isAdmin() {
-		failIfNot {
+		failIfNot("Only bot admins can use this command!") {
 			val member = event.interaction.getMember()
 			return@failIfNot member.hasPermission(Permission.Administrator)
 				|| propertyService.get(PropertyName.ROLE_ADMIN)?.let { member.roleIds.contains(Snowflake(it)) } ?: false

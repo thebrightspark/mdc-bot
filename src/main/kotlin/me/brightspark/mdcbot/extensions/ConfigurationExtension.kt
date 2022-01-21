@@ -10,6 +10,7 @@ import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Role
 import dev.kord.core.entity.channel.Channel
+import dev.kord.rest.builder.message.create.embed
 import me.brightspark.mdcbot.model.PropertyName
 import me.brightspark.mdcbot.service.LoggingService
 import me.brightspark.mdcbot.service.PropertyService
@@ -42,7 +43,7 @@ class ConfigurationExtension(
 					val channel = arguments.channel
 					propertyService.set(PropertyName.CHANNEL_LOGS, channel.id.toString())
 
-					respond { content = "Log channel has been set to ${channel.mention}" }
+					respond { embed { description = "Log channel has been set to ${channel.mention}" } }
 					log.info { "Command log: Log channel set to ${channel.toSimpleString()}" }
 				}
 			}
@@ -56,7 +57,7 @@ class ConfigurationExtension(
 					propertyService.set(PropertyName.ROLE_ADMIN, role.id.toString())
 
 					loggingService.log("Bot admin role set to ${role.mention}")
-					respond { content = "Bot admin role has been set to ${role.mention}" }
+					respond { embed { description = "Bot admin role has been set to ${role.mention}" } }
 					log.info { "Command adminRole: Admin role set to ${role.toSimpleString()}" }
 				}
 			}
@@ -71,7 +72,7 @@ class ConfigurationExtension(
 
 					val name = category.data.name.value
 					loggingService.log("Dev category set to `$name`")
-					respond { content = "Dev category has been set to `$name`" }
+					respond { embed { description = "Dev category has been set to `$name`" } }
 					log.info { "Command devCategory: Dev category set to ${category.toSimpleString()}" }
 				}
 			}

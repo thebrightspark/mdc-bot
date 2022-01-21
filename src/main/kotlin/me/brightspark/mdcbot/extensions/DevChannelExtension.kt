@@ -12,7 +12,7 @@ import com.kotlindiscord.kord.extensions.extensions.publicUserCommand
 import com.kotlindiscord.kord.extensions.types.PublicInteractionContext
 import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.*
-import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.channel.createTextChannel
 import dev.kord.core.behavior.channel.edit
 import dev.kord.core.entity.Member
@@ -93,12 +93,14 @@ class DevChannelExtension(
 
 				action {
 					val user = event.interaction.user
-					val channelId = devChannelService.getByUserId(user.id.value.toLong())!!.channelId
+					val devChannel = devChannelService.getByUserId(user.id.value.toLong())!!
+					val channelId = devChannel.channelId
 					val channel = event.interaction.kord.getChannel(Snowflake(channelId))
 						?.takeIf { it is TextChannel }?.let { it as TextChannel }
 						?: run {
 							// Channel does not exist!
-							respond { content = "Your dev channel does not exist!" }
+							devChannelService.remove(devChannel)
+							respond { embed { description = "Your dev channel does not exist!" } }
 							return@action
 						}
 
@@ -109,7 +111,7 @@ class DevChannelExtension(
 					}.name
 
 					loggingService.log("Renamed channel $channelId from `$oldName` to `$newName`")
-					respond { content = "Renamed your channel to `$newName`" }
+					respond { embed { description = "Renamed your channel to `$newName`" } }
 					log.info { "Command dev name: Renamed channel $channelId from '$oldName' to '$newName'" }
 				}
 			}
@@ -135,7 +137,9 @@ class DevChannelExtension(
 		devChannelService.getByUserId(member.id.value.toLong())?.let { devChannel ->
 			kord.getChannel(Snowflake(devChannel.channelId))?.let { channel ->
 				// Channel already exists!
-				respond { content = "A channel already exists for ${member.mention} -> ${channel.mention}" }
+				respond {
+					embed { description = "A channel already exists for ${member.mention} -> ${channel.mention}" }
+				}
 				return
 			} ?: run {
 				// Channel stored doesn't exist!
@@ -145,14 +149,14 @@ class DevChannelExtension(
 		}
 
 		val categoryId = propertyService.get(PropertyName.CATEGORY_DEV) ?: run {
-			respond { content = "The dev category has not been set!" }
+			respond { embed { description = "The dev category has not been set!" } }
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
 		}
 		val category = kord.getChannel(Snowflake(categoryId))
 			?.takeIf { it is Category }?.let { it as Category }
 			?: run {
-				respond { content = "The dev category could not be found!" }
+				respond { embed { description = "The dev category could not be found!" } }
 				log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
 				return
 			}
@@ -166,23 +170,20 @@ class DevChannelExtension(
 				Permissions()
 			)
 		}
-		val botMessage = channel.createMessage {
-			embed {
-				description = "**Owner:** ${member.mention}"
-			}
-		}.apply { pin("Dev channel bot message") }
+		val botMessage = channel.createEmbed { description = "**Owner:** ${member.mention}" }
+			.apply { pin("Dev channel bot message") }
 
 		devChannelService.save(
 			DevChannel(channel.id.value.toLong(), member.id.value.toLong(), botMessage.id.value.toLong())
 		)
 
 		loggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}")
-		respond { content = "New dev channel ${channel.mention} created, owned by ${member.mention}" }
+		respond { embed { description = "New dev channel ${channel.mention} created, owned by ${member.mention}" } }
 		log.info { "Command createDevChannel: Created new dev channel ${channel.id} for member ${member.toSimpleString()}" }
 	}
 
 	private suspend fun CheckContext<ApplicationInteractionCreateEvent>.ownsADevChannel() {
-		failIfNot {
+		failIfNot("You do not own a dev channel!") {
 			return@failIfNot devChannelService.getByUserId(event.interaction.user.id.value.toLong()) != null
 		}
 	}
@@ -203,9 +204,5 @@ class DevChannelExtension(
 			name = "name"
 			description = "The dev channel name"
 		}
-	}
-
-	inner class DeleteDevChannelArguments : Arguments() {
-
 	}
 }
