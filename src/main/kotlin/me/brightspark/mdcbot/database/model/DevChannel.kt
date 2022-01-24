@@ -13,5 +13,7 @@ data class DevChannel(
 	@Column(nullable = false)
 	var userId: Long,
 	@Column(nullable = true)
-	var botMessageId: Long
+	var botMessageId: Long,
+	@Column(nullable = true)
+	var inviteCode: String? = null
 )

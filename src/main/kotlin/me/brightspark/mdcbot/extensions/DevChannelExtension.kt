@@ -15,8 +15,10 @@ import dev.kord.common.entity.*
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.channel.createTextChannel
 import dev.kord.core.behavior.channel.edit
+import dev.kord.core.entity.Invite
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.TextChannel
+import dev.kord.core.entity.channel.createInvite
 import dev.kord.core.event.channel.CategoryDeleteEvent
 import dev.kord.core.event.channel.TextChannelDeleteEvent
 import dev.kord.core.event.interaction.ApplicationInteractionCreateEvent
@@ -107,12 +109,37 @@ class DevChannelExtension(
 					val oldName = channel.name
 					val newName = channel.edit {
 						name = arguments.name
-						reason = "Renamed by ${user.mention}"
+						reason = "Renamed by ${user.asUser().toSimpleString()}"
 					}.name
 
 					loggingService.log("Renamed channel $channelId from `$oldName` to `$newName`")
 					respond { embed { description = "Renamed your channel to `$newName`" } }
 					log.info { "Command dev name: Renamed channel $channelId from '$oldName' to '$newName'" }
+				}
+			}
+
+			publicSubCommand {
+				name = "invite"
+				description = "Gets or creates an invite for your dev channel"
+				check { ownsADevChannel() }
+
+				action {
+					val devChannel = devChannelService.getByUserId(event.interaction.user.id.value.toLong())!!
+					val kord = event.kord
+					val channel = kord.getChannel(Snowflake(devChannel.channelId))!! as TextChannel
+					val invite: Invite = devChannel.inviteCode?.let { inviteCode ->
+						kord.getGuild(mdcGuildId)!!.getInviteOrNull(inviteCode, false)
+					} ?: run {
+						channel.createInvite {
+							age = 0 // No expiration
+							reason = "Invite for dev channel ${channel.toSimpleString()}"
+						}
+
+					}
+
+					respond {
+						embed { description = "Invite to ${channel.mention}:\n`https://discord.gg/${invite.code}`" }
+					}
 				}
 			}
 		}
@@ -184,7 +211,7 @@ class DevChannelExtension(
 
 	private suspend fun CheckContext<ApplicationInteractionCreateEvent>.ownsADevChannel() {
 		failIfNot("You do not own a dev channel!") {
-			return@failIfNot devChannelService.getByUserId(event.interaction.user.id.value.toLong()) != null
+			return@failIfNot devChannelService.getByUserId(event.interaction.user.id.value.toLong())?.channelId != null
 		}
 	}
 
