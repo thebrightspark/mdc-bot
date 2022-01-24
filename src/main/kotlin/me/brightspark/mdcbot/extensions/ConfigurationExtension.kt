@@ -56,7 +56,7 @@ class ConfigurationExtension(
 					val role = arguments.role
 					propertyService.set(PropertyName.ROLE_ADMIN, role.id.toString())
 
-					loggingService.log("Bot admin role set to ${role.mention}")
+					loggingService.log("Bot admin role set to ${role.mention}", event.interaction.user.asUserOrNull())
 					respond { embed { description = "Bot admin role has been set to ${role.mention}" } }
 					log.info { "Command adminRole: Admin role set to ${role.toSimpleString()}" }
 				}
@@ -71,7 +71,7 @@ class ConfigurationExtension(
 					propertyService.set(PropertyName.CATEGORY_DEV, category.id.toString())
 
 					val name = category.data.name.value
-					loggingService.log("Dev category set to `$name`")
+					loggingService.log("Dev category set to `$name`", event.interaction.user.asUserOrNull())
 					respond { embed { description = "Dev category has been set to `$name`" } }
 					log.info { "Command devCategory: Dev category set to ${category.toSimpleString()}" }
 				}

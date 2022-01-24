@@ -17,6 +17,7 @@ import dev.kord.core.behavior.channel.createTextChannel
 import dev.kord.core.behavior.channel.edit
 import dev.kord.core.entity.Invite
 import dev.kord.core.entity.Member
+import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.entity.channel.createInvite
 import dev.kord.core.event.channel.CategoryDeleteEvent
@@ -84,7 +85,15 @@ class DevChannelExtension(
 
 				action {
 					val member = arguments.member ?: event.interaction.getMember()
-					arguments.name?.let { createDevChannel(member, it) } ?: createDevChannel(member)
+					arguments.name
+						?.let {
+							createDevChannel(
+								member = member,
+								name = it,
+								creator = event.interaction.user.asUser()
+							)
+						}
+						?: createDevChannel(member = member, creator = event.interaction.user.asUser())
 				}
 			}
 
@@ -94,7 +103,7 @@ class DevChannelExtension(
 				check { ownsADevChannel() }
 
 				action {
-					val user = event.interaction.user
+					val user = event.interaction.user.asUser()
 					val devChannel = devChannelService.getByUserId(user.id.value.toLong())!!
 					val channelId = devChannel.channelId
 					val channel = event.interaction.kord.getChannel(Snowflake(channelId))
@@ -109,12 +118,12 @@ class DevChannelExtension(
 					val oldName = channel.name
 					val newName = channel.edit {
 						name = arguments.name
-						reason = "Renamed by ${user.asUser().toSimpleString()}"
+						reason = "Renamed by ${user.toSimpleString()}"
 					}.name
 
-					loggingService.log("Renamed channel $channelId from `$oldName` to `$newName`")
+					loggingService.log("Renamed channel $channelId from `$oldName` to `$newName`", user)
 					respond { embed { description = "Renamed your channel to `$newName`" } }
-					log.info { "Command dev name: Renamed channel $channelId from '$oldName' to '$newName'" }
+					log.info { "Command dev name: ${user.toSimpleString()} renamed channel $channelId from '$oldName' to '$newName'" }
 				}
 			}
 
@@ -124,7 +133,8 @@ class DevChannelExtension(
 				check { ownsADevChannel() }
 
 				action {
-					val devChannel = devChannelService.getByUserId(event.interaction.user.id.value.toLong())!!
+					val user = event.interaction.user.asUser()
+					val devChannel = devChannelService.getByUserId(user.id.value.toLong())!!
 					val kord = event.kord
 					val channel = kord.getChannel(Snowflake(devChannel.channelId))!! as TextChannel
 					val invite: Invite = devChannel.inviteCode?.let { inviteCode ->
@@ -133,8 +143,15 @@ class DevChannelExtension(
 						channel.createInvite {
 							age = 0 // No expiration
 							reason = "Invite for dev channel ${channel.toSimpleString()}"
+						}.also {
+							devChannel.inviteCode = it.code
+							devChannelService.save(devChannel)
+							loggingService.log(
+								"Created new invite '${it.code}' for dev channel ${channel.toSimpleString()}",
+								user
+							)
+							log.info { "Command dev invite: ${user.toSimpleString()} created new invite '${it.code}' for dev channel ${channel.toSimpleString()}" }
 						}
-
 					}
 
 					respond {
@@ -150,15 +167,16 @@ class DevChannelExtension(
 			check { isAdmin() }
 
 			action {
-				val member = event.interaction.user.asMember(event.interaction.data.guildId.value!!)
-				createDevChannel(member)
+				val member = event.interaction.getTarget().asMember(event.interaction.data.guildId.value!!)
+				createDevChannel(member = member, creator = event.interaction.user.asUser())
 			}
 		}
 	}
 
 	private suspend fun PublicInteractionContext.createDevChannel(
 		member: Member,
-		name: String = "${member.displayName}-mods"
+		name: String = "${member.displayName}-mods",
+		creator: User
 	) {
 		// Check if the member already owns a channel
 		devChannelService.getByUserId(member.id.value.toLong())?.let { devChannel ->
@@ -204,9 +222,9 @@ class DevChannelExtension(
 			DevChannel(channel.id.value.toLong(), member.id.value.toLong(), botMessage.id.value.toLong())
 		)
 
-		loggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}")
+		loggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}", creator)
 		respond { embed { description = "New dev channel ${channel.mention} created, owned by ${member.mention}" } }
-		log.info { "Command createDevChannel: Created new dev channel ${channel.id} for member ${member.toSimpleString()}" }
+		log.info { "Command createDevChannel: ${creator.toSimpleString()} created new dev channel ${channel.toSimpleString()} for member ${member.toSimpleString()}" }
 	}
 
 	private suspend fun CheckContext<ApplicationInteractionCreateEvent>.ownsADevChannel() {
