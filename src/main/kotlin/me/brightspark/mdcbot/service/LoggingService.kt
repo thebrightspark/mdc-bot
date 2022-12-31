@@ -24,7 +24,7 @@ class LoggingService(
 	fun log(message: String, user: User? = null) {
 		logChannel?.let {
 			coroutineScope.launch {
-				val channel = getKoin().get<Kord>().getGuild(mdcGuildId)?.getChannel(it)
+				val channel = getKoin().get<Kord>().getGuildOrNull(mdcGuildId)?.getChannel(it)
 				if (channel is GuildMessageChannel)
 					channel.createEmbed {
 						description = message

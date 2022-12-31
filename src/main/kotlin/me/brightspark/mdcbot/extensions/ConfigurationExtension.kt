@@ -7,23 +7,16 @@ import com.kotlindiscord.kord.extensions.commands.converters.impl.role
 import com.kotlindiscord.kord.extensions.extensions.ephemeralSlashCommand
 import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.ChannelType
-import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Role
 import dev.kord.core.entity.channel.Channel
 import dev.kord.rest.builder.message.create.embed
 import me.brightspark.mdcbot.model.PropertyName
-import me.brightspark.mdcbot.service.LoggingService
-import me.brightspark.mdcbot.service.PropertyService
 import me.brightspark.mdcbot.util.toSimpleString
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
 @Component
-class ConfigurationExtension(
-	private val loggingService: LoggingService,
-	private val mdcGuildId: Snowflake,
-	private val propertyService: PropertyService
-) : BaseExtension(propertyService) {
+class ConfigurationExtension : BaseExtension() {
 	private val log = KotlinLogging.logger {}
 
 	override val name: String = "configuration"
@@ -32,7 +25,7 @@ class ConfigurationExtension(
 		ephemeralSlashCommand {
 			name = "admin"
 			description = "Admin commands for configuring the bot"
-			guild(mdcGuildId)
+			mdcGuild()
 			check { isAdmin() }
 
 			ephemeralSubCommand(::LogArguments) {

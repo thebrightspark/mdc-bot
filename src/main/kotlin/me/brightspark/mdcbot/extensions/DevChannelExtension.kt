@@ -13,34 +13,30 @@ import com.kotlindiscord.kord.extensions.types.PublicInteractionContext
 import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.*
 import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.channel.createInvite
 import dev.kord.core.behavior.channel.createTextChannel
 import dev.kord.core.behavior.channel.edit
 import dev.kord.core.entity.Invite
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.TextChannel
-import dev.kord.core.entity.channel.createInvite
 import dev.kord.core.event.channel.CategoryDeleteEvent
 import dev.kord.core.event.channel.TextChannelDeleteEvent
-import dev.kord.core.event.interaction.ApplicationInteractionCreateEvent
+import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
 import dev.kord.rest.builder.message.create.embed
 import me.brightspark.mdcbot.database.model.DevChannel
 import me.brightspark.mdcbot.database.service.DevChannelService
 import me.brightspark.mdcbot.model.PropertyName
-import me.brightspark.mdcbot.service.LoggingService
-import me.brightspark.mdcbot.service.PropertyService
 import me.brightspark.mdcbot.util.getCategory
 import me.brightspark.mdcbot.util.toSimpleString
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
+import kotlin.time.Duration
 
 @Component
 class DevChannelExtension(
-	private val devChannelService: DevChannelService,
-	private val loggingService: LoggingService,
-	private val mdcGuildId: Snowflake,
-	private val propertyService: PropertyService
-) : BaseExtension(propertyService) {
+	private val devChannelService: DevChannelService
+) : BaseExtension() {
 	private val log = KotlinLogging.logger {}
 
 	override val name: String = "slash-commands"
@@ -75,7 +71,7 @@ class DevChannelExtension(
 		publicSlashCommand {
 			name = "dev"
 			description = "Commands for developers to use for creating and managing their personal channels"
-			guild(mdcGuildId)
+			mdcGuild()
 
 			publicSubCommand(::CreateDevChannelArguments) {
 				name = "create"
@@ -138,10 +134,10 @@ class DevChannelExtension(
 					val kord = event.kord
 					val channel = kord.getChannel(Snowflake(devChannel.channelId))!! as TextChannel
 					val invite: Invite = devChannel.inviteCode?.let { inviteCode ->
-						kord.getGuild(mdcGuildId)!!.getInviteOrNull(inviteCode, false)
+						kord.getGuildOrNull(mdcGuildId)!!.getInviteOrNull(inviteCode, false)
 					} ?: run {
 						channel.createInvite {
-							age = 0 // No expiration
+							maxAge = Duration.ZERO // No expiration
 							reason = "Invite for dev channel ${channel.toSimpleString()}"
 						}.also {
 							devChannel.inviteCode = it.code
@@ -163,7 +159,7 @@ class DevChannelExtension(
 
 		publicUserCommand {
 			name = "Create dev channel"
-			guild(mdcGuildId)
+			mdcGuild()
 			check { isAdmin() }
 
 			action {
@@ -227,7 +223,7 @@ class DevChannelExtension(
 		log.info { "Command createDevChannel: ${creator.toSimpleString()} created new dev channel ${channel.toSimpleString()} for member ${member.toSimpleString()}" }
 	}
 
-	private suspend fun CheckContext<ApplicationInteractionCreateEvent>.ownsADevChannel() {
+	private suspend fun CheckContext<ApplicationCommandInteractionCreateEvent>.ownsADevChannel() {
 		failIfNot("You do not own a dev channel!") {
 			return@failIfNot devChannelService.getByUserId(event.interaction.user.id.value.toLong())?.channelId != null
 		}

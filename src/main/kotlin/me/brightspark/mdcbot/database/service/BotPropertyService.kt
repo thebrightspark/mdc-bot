@@ -2,6 +2,7 @@ package me.brightspark.mdcbot.database.service
 
 import me.brightspark.mdcbot.database.model.BotProperty
 import me.brightspark.mdcbot.database.repository.BotPropertyRepo
+import me.brightspark.mdcbot.util.ifPresentOrElse
 import org.springframework.cache.annotation.CacheConfig
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -18,7 +19,7 @@ class BotPropertyService(
 		.value
 
 	@CacheEvict(key = "#propertyName")
-	fun put(propertyName: String, propertyValue: String?) = botPropertyRepo.findById(propertyName).ifPresentOrElse(
+	fun put(propertyName: String, propertyValue: String?): Unit = botPropertyRepo.findById(propertyName).ifPresentOrElse(
 		{ botPropertyRepo.save(it.apply { value = propertyValue }) },
 		{ botPropertyRepo.save(BotProperty(propertyName, propertyValue)) }
 	)
