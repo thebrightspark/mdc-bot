@@ -14,8 +14,8 @@ sourceCompatibility = JavaVersion.VERSION_11
 repositories {
     mavenCentral()
     maven {
-        name 'Kotlin Discord'
-        url 'https://maven.kotlindiscord.com/repository/maven-public/'
+        name 'Kotlin Discord Snapshots'
+        url 'https://s01.oss.sonatype.org/content/repositories/snapshots'
     }
     maven {
         name = "Sonatype Snapshots"
