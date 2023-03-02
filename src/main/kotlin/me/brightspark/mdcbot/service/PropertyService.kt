@@ -13,7 +13,4 @@ class PropertyService(
 
 	fun <T> set(property: Property<T>, propertyValue: T) =
 		botPropertyService.put(property.name, propertyValue?.let { property.serialise(it) })
-
-	fun setAny(property: Property<*>, propertyValue: String?) =
-		botPropertyService.put(property.name, propertyValue)
 }
