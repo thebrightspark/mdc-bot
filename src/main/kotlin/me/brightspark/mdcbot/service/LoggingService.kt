@@ -9,7 +9,7 @@ import dev.kord.core.entity.channel.GuildMessageChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import me.brightspark.mdcbot.model.PropertyName
+import me.brightspark.mdcbot.properties.Property
 import org.springframework.stereotype.Service
 
 @Service
@@ -19,7 +19,7 @@ class LoggingService(
 	private val propertyService: PropertyService
 ) {
 	private val logChannel: Snowflake?
-		get() = propertyService.get(PropertyName.CHANNEL_LOGS)?.let { Snowflake(it) }
+		get() = propertyService.get(Property.CHANNEL_LOGS)
 
 	fun log(message: String, user: User? = null) {
 		logChannel?.let {

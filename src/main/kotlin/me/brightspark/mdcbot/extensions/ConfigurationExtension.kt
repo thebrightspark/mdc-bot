@@ -1,17 +1,24 @@
 package me.brightspark.mdcbot.extensions
 
 import com.kotlindiscord.kord.extensions.commands.Arguments
+import com.kotlindiscord.kord.extensions.commands.application.slash.EphemeralSlashCommand
 import com.kotlindiscord.kord.extensions.commands.application.slash.ephemeralSubCommand
-import com.kotlindiscord.kord.extensions.commands.converters.impl.channel
-import com.kotlindiscord.kord.extensions.commands.converters.impl.role
+import com.kotlindiscord.kord.extensions.components.ComponentContainer
+import com.kotlindiscord.kord.extensions.components.applyComponents
+import com.kotlindiscord.kord.extensions.components.components
+import com.kotlindiscord.kord.extensions.components.ephemeralSelectMenu
+import com.kotlindiscord.kord.extensions.components.forms.ModalForm
+import com.kotlindiscord.kord.extensions.components.menus.EphemeralSelectMenuContext
 import com.kotlindiscord.kord.extensions.extensions.ephemeralSlashCommand
 import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.ChannelType
-import dev.kord.core.entity.Role
-import dev.kord.core.entity.channel.Channel
-import dev.kord.rest.builder.message.create.embed
-import me.brightspark.mdcbot.model.PropertyName
-import me.brightspark.mdcbot.util.toSimpleString
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.behavior.GuildBehavior
+import dev.kord.core.behavior.edit
+import dev.kord.rest.builder.message.modify.embed
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.toList
+import me.brightspark.mdcbot.properties.Property
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
@@ -28,72 +35,141 @@ class ConfigurationExtension : BaseExtension() {
 			mdcGuild()
 			check { isAdmin() }
 
-			ephemeralSubCommand(::LogArguments) {
-				name = "log"
-				description = "Sets the log channel for the bot"
-
-				action {
-					val channel = arguments.channel
-					propertyService.set(PropertyName.CHANNEL_LOGS, channel.id.toString())
-
-					respond { embed { description = "Log channel has been set to ${channel.mention}" } }
-					log.info { "Command log: Log channel set to ${channel.toSimpleString()}" }
-				}
+			ephemeralSubCommand {
+				val property = Property.CHANNEL_LOGS
+				setupConfigMenuSingle(
+					property = property,
+					optionsProvider = { channelChoices(it) },
+					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.name },
+					actionConsumer = { propertyService.set(property, Snowflake(it)) }
+				)
 			}
 
-			ephemeralSubCommand(::AdminRoleArguments) {
-				name = "role"
-				description = "Sets the role which is allowed to use the admin commands"
-
-				action {
-					val role = arguments.role
-					propertyService.set(PropertyName.ROLE_ADMIN, role.id.toString())
-
-					loggingService.log("Bot admin role set to ${role.mention}", event.interaction.user.asUserOrNull())
-					respond { embed { description = "Bot admin role has been set to ${role.mention}" } }
-					log.info { "Command adminRole: Admin role set to ${role.toSimpleString()}" }
-				}
+			ephemeralSubCommand {
+				val property = Property.ROLE_ADMIN
+				setupConfigMenuSingle(
+					property = property,
+					optionsProvider = { roleChoices(it) },
+					readableProvider = { guild, selected -> guild.getRoleOrNull(Snowflake(selected))?.name },
+					actionConsumer = { propertyService.set(property, Snowflake(it)) }
+				)
 			}
 
-			ephemeralSubCommand(::DevCategoryArguments) {
-				name = "category"
-				description = "Sets the developer category, where all developer channels will be created under"
+			ephemeralSubCommand {
+				val property = Property.CATEGORY_DEV
+				setupConfigMenuSingle(
+					property = property,
+					optionsProvider = { categoryChoices(it) },
+					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.name },
+					actionConsumer = { propertyService.set(property, Snowflake(it)) }
+				)
+			}
 
-				action {
-					val category = arguments.category
-					propertyService.set(PropertyName.CATEGORY_DEV, category.id.toString())
+			ephemeralSubCommand {
+				val property = Property.AUTO_DELETE_LEAVERS_CHANNELS
+				setupConfigMenuMulti(
+					property = property,
+					optionsProvider = { channelChoices(it) },
+					readableProvider = { guild, selected ->
+						selected.mapNotNull { guild.getChannelOrNull(Snowflake(it)) }.joinToString()
+					},
+					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
+				)
+			}
+		}
+	}
 
-					val name = category.data.name.value
-					loggingService.log("Dev category set to `$name`", event.interaction.user.asUserOrNull())
-					respond { embed { description = "Dev category has been set to `$name`" } }
-					log.info { "Command devCategory: Dev category set to ${category.toSimpleString()}" }
+	private fun <ARGS : Arguments> EphemeralSlashCommand<ARGS, ModalForm>.setupConfigMenuSingle(
+		property: Property<*>,
+		optionsProvider: (suspend (GuildBehavior) -> List<Pair<String, String>>),
+		readableProvider: (suspend (GuildBehavior, String) -> String?),
+		actionConsumer: (String) -> Unit
+	) {
+		name = property.name
+		description = "Sets ${property.description}"
+
+		action {
+			respond {
+				lateinit var messageComponents: ComponentContainer
+				messageComponents = components {
+					ephemeralSelectMenu {
+						maximumChoices = 1
+
+						// Options
+						optionsProvider(guild!!).forEach { option(it.first, it.second) }
+
+						// Interaction
+						action {
+							val selectedValue = selected.first()
+							actionConsumer(selectedValue)
+
+							val selectedReadable = readableProvider(guild!!, selectedValue)
+							configMenuMessageResponse(property, selectedReadable, messageComponents)
+						}
+					}
 				}
 			}
 		}
 	}
 
-	inner class LogArguments : Arguments() {
-		val channel: Channel by channel {
-			name = "channel"
-			description = "The channel"
-			requireSameGuild = true
-			requireChannelType(ChannelType.GuildText)
+	private fun <ARGS : Arguments, PROP> EphemeralSlashCommand<ARGS, ModalForm>.setupConfigMenuMulti(
+		property: Property<PROP>,
+		optionsProvider: (suspend (GuildBehavior) -> List<Pair<String, String>>),
+		readableProvider: (suspend (GuildBehavior, List<String>) -> String?),
+		action: (List<String>) -> Unit
+	) {
+		name = property.name
+		description = "Sets ${property.description}"
+
+		action {
+			respond {
+				lateinit var messageComponents: ComponentContainer
+				messageComponents = components {
+					ephemeralSelectMenu {
+						maximumChoices = null
+
+						// Options
+						optionsProvider(guild!!).forEach { option(it.first, it.second) }
+
+						// Interaction
+						action {
+							action(selected)
+
+							val selectedReadable = readableProvider(guild!!, selected)
+							configMenuMessageResponse(property, selectedReadable, messageComponents)
+						}
+					}
+				}
+			}
 		}
 	}
 
-	inner class AdminRoleArguments : Arguments() {
-		val role: Role by role {
-			name = "role"
-			description = "The role"
+	private suspend fun EphemeralSelectMenuContext<ModalForm>.configMenuMessageResponse(
+		property: Property<*>,
+		selectedReadable: String?,
+		components: ComponentContainer
+	) {
+		components.removeAll()
+		message.edit {
+			applyComponents(components)
+			embed {
+				description = "${property.nameReadable} has been set to $selectedReadable"
+			}
 		}
 	}
 
-	inner class DevCategoryArguments : Arguments() {
-		val category: Channel by channel {
-			name = "category"
-			description = "The category"
-			requireSameGuild = true
-			requireChannelType(ChannelType.GuildCategory)
-		}
-	}
+	private suspend fun channelChoices(guild: GuildBehavior): List<Pair<String, String>> =
+		guild.channels.filter { it.type == ChannelType.GuildCategory }.toList()
+			.sortedBy { it.rawPosition }
+			.map { it.name to it.id.toString() }
+
+	private suspend fun categoryChoices(guild: GuildBehavior): List<Pair<String, String>> =
+		guild.channels.filter { it.type == ChannelType.GuildCategory }.toList()
+			.sortedBy { it.rawPosition }
+			.map { it.name to it.id.toString() }
+
+	private suspend fun roleChoices(guild: GuildBehavior): List<Pair<String, String>> =
+		guild.roles.toList()
+			.sortedBy { it.rawPosition }
+			.map { it.name to it.id.toString() }
 }

@@ -9,7 +9,7 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
-import me.brightspark.mdcbot.model.PropertyName
+import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.service.LoggingService
 import me.brightspark.mdcbot.service.PropertyService
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,7 +35,7 @@ abstract class BaseExtension : Extension() {
 		failIfNot("Only bot admins can use this command!") {
 			val member = event.interaction.getMember()
 			return@failIfNot member.hasPermission(Permission.Administrator)
-				|| propertyService.get(PropertyName.ROLE_ADMIN)?.let { member.roleIds.contains(Snowflake(it)) } ?: false
+				|| propertyService.get(Property.ROLE_ADMIN).let { member.roleIds.contains(it) }
 		}
 	}
 }

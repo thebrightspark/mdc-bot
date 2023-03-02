@@ -1,15 +1,19 @@
 package me.brightspark.mdcbot.service
 
 import me.brightspark.mdcbot.database.service.BotPropertyService
-import me.brightspark.mdcbot.model.PropertyName
+import me.brightspark.mdcbot.properties.Property
 import org.springframework.stereotype.Service
 
 @Service
 class PropertyService(
 	private val botPropertyService: BotPropertyService
 ) {
-	fun get(propertyName: PropertyName): String? = botPropertyService.get(propertyName.name)
+	fun <T> get(property: Property<T>): T =
+		botPropertyService.get(property.name)?.let { property.deserialise(it) } ?: property.defaultValue
 
-	fun set(propertyName: PropertyName, propertyValue: String?) =
-		botPropertyService.put(propertyName.name, propertyValue)
+	fun <T> set(property: Property<T>, propertyValue: T) =
+		botPropertyService.put(property.name, propertyValue?.let { property.serialise(it) })
+
+	fun setAny(property: Property<*>, propertyValue: String?) =
+		botPropertyService.put(property.name, propertyValue)
 }

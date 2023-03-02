@@ -26,7 +26,7 @@ import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
 import dev.kord.rest.builder.message.create.embed
 import me.brightspark.mdcbot.database.model.DevChannel
 import me.brightspark.mdcbot.database.service.DevChannelService
-import me.brightspark.mdcbot.model.PropertyName
+import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.util.getCategory
 import me.brightspark.mdcbot.util.toSimpleString
 import mu.KotlinLogging
@@ -39,15 +39,13 @@ class DevChannelExtension(
 ) : BaseExtension() {
 	private val log = KotlinLogging.logger {}
 
-	override val name: String = "slash-commands"
+	override val name: String = "dev-channel"
 
 	override suspend fun setup() {
 		event<CategoryDeleteEvent> {
 			check {
 				failIfNot {
-					propertyService.get(PropertyName.CATEGORY_DEV)?.let {
-						event.channel.id.toString() == it
-					} ?: false
+					propertyService.get(Property.CATEGORY_DEV).let { event.channel.id == it }
 				}
 			}
 			action {
@@ -189,12 +187,12 @@ class DevChannelExtension(
 			}
 		}
 
-		val categoryId = propertyService.get(PropertyName.CATEGORY_DEV) ?: run {
+		val categoryId = propertyService.get(Property.CATEGORY_DEV) ?: run {
 			respond { embed { description = "The dev category has not been set!" } }
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
 		}
-		val category = kord.getCategory(Snowflake(categoryId)) ?: run {
+		val category = kord.getCategory(categoryId) ?: run {
 			respond { embed { description = "The dev category could not be found!" } }
 			log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
 			return

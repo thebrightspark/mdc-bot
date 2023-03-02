@@ -1,7 +1,7 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
-    id 'org.jetbrains.kotlin.plugin.spring' version '1.7.10'
-    id 'org.jetbrains.kotlin.plugin.jpa' version '1.7.10'
+    id 'org.jetbrains.kotlin.jvm' version '1.8.0'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.8.0'
+    id 'org.jetbrains.kotlin.plugin.jpa' version '1.8.0'
 
     id 'org.springframework.boot' version '2.6.2'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
@@ -9,7 +9,12 @@ plugins {
 
 group = 'me.brightspark'
 version = '0.1.0'
-sourceCompatibility = JavaVersion.VERSION_11
+
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
 
 repositories {
     mavenCentral()
@@ -26,7 +31,7 @@ repositories {
 dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4'
 
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -36,11 +41,7 @@ dependencies {
     // https://github.com/gwenn/sqlite-dialect
     implementation 'com.github.gwenn:sqlite-dialect:0.1.2'
 
-    implementation 'com.kotlindiscord.kord.extensions:kord-extensions:1.5.6-SNAPSHOT'
+    implementation 'com.kotlindiscord.kord.extensions:kord-extensions:1.5.6-forums-SNAPSHOT'
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.1'
     implementation 'io.github.microutils:kotlin-logging-jvm:2.1.23'
-}
-
-compileKotlin {
-    kotlinOptions.jvmTarget = '11'
 }
