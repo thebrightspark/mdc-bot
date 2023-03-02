@@ -8,13 +8,12 @@ import com.kotlindiscord.kord.extensions.components.applyComponents
 import com.kotlindiscord.kord.extensions.components.components
 import com.kotlindiscord.kord.extensions.components.ephemeralSelectMenu
 import com.kotlindiscord.kord.extensions.components.forms.ModalForm
-import com.kotlindiscord.kord.extensions.components.menus.EphemeralSelectMenuContext
 import com.kotlindiscord.kord.extensions.extensions.ephemeralSlashCommand
+import com.kotlindiscord.kord.extensions.types.edit
 import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.GuildBehavior
-import dev.kord.core.behavior.edit
 import dev.kord.rest.builder.message.modify.embed
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
@@ -90,6 +89,8 @@ class ConfigurationExtension : BaseExtension() {
 
 		action {
 			respond {
+				content = "Please select an option:"
+
 				lateinit var messageComponents: ComponentContainer
 				messageComponents = components {
 					ephemeralSelectMenu {
@@ -104,7 +105,14 @@ class ConfigurationExtension : BaseExtension() {
 							actionConsumer(selectedValue)
 
 							val selectedReadable = readableProvider(guild!!, selectedValue)
-							configMenuMessageResponse(property, selectedReadable, messageComponents)
+							messageComponents.removeAll()
+							edit {
+								content = null
+								applyComponents(messageComponents)
+								embed {
+									description = "${property.nameReadable} has been set to $selectedReadable"
+								}
+							}
 						}
 					}
 				}
@@ -123,6 +131,8 @@ class ConfigurationExtension : BaseExtension() {
 
 		action {
 			respond {
+				content = "Please select any number of options:"
+
 				lateinit var messageComponents: ComponentContainer
 				messageComponents = components {
 					ephemeralSelectMenu {
@@ -136,24 +146,17 @@ class ConfigurationExtension : BaseExtension() {
 							action(selected)
 
 							val selectedReadable = readableProvider(guild!!, selected)
-							configMenuMessageResponse(property, selectedReadable, messageComponents)
+							messageComponents.removeAll()
+							edit {
+								content = null
+								applyComponents(messageComponents)
+								embed {
+									description = "${property.nameReadable} has been set to $selectedReadable"
+								}
+							}
 						}
 					}
 				}
-			}
-		}
-	}
-
-	private suspend fun EphemeralSelectMenuContext<ModalForm>.configMenuMessageResponse(
-		property: Property<*>,
-		selectedReadable: String?,
-		components: ComponentContainer
-	) {
-		components.removeAll()
-		message.edit {
-			applyComponents(components)
-			embed {
-				description = "${property.nameReadable} has been set to $selectedReadable"
 			}
 		}
 	}
