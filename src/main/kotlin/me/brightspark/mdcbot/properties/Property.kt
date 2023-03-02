@@ -22,7 +22,7 @@ class Property<T>(
 			)
 		val ROLE_ADMIN = create("role", "Bot admin role", "bot admin role", SNOWFLAKE)
 		val AUTO_DELETE_LEAVERS_CHANNELS =
-			create("auto-delete-leavers-messages-channels", "Auto delete leavers channels", "", SNOWFLAKES)
+			create("auto-delete-leavers-channels", "Auto delete leavers channels", "", SNOWFLAKES)
 
 		private fun <T> create(
 			name: String,
