@@ -39,7 +39,7 @@ class ConfigurationExtension : BaseExtension() {
 				setupConfigMenuSingle(
 					property = property,
 					optionsProvider = { channelChoices(it) },
-					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.name },
+					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.mention },
 					actionConsumer = { propertyService.set(property, Snowflake(it)) }
 				)
 			}
@@ -49,7 +49,7 @@ class ConfigurationExtension : BaseExtension() {
 				setupConfigMenuSingle(
 					property = property,
 					optionsProvider = { roleChoices(it) },
-					readableProvider = { guild, selected -> guild.getRoleOrNull(Snowflake(selected))?.name },
+					readableProvider = { guild, selected -> guild.getRoleOrNull(Snowflake(selected))?.mention },
 					actionConsumer = { propertyService.set(property, Snowflake(it)) }
 				)
 			}
@@ -59,7 +59,7 @@ class ConfigurationExtension : BaseExtension() {
 				setupConfigMenuSingle(
 					property = property,
 					optionsProvider = { categoryChoices(it) },
-					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.name },
+					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.mention },
 					actionConsumer = { propertyService.set(property, Snowflake(it)) }
 				)
 			}
@@ -70,7 +70,7 @@ class ConfigurationExtension : BaseExtension() {
 					property = property,
 					optionsProvider = { channelChoices(it) },
 					readableProvider = { guild, selected ->
-						selected.mapNotNull { guild.getChannelOrNull(Snowflake(it)) }.joinToString()
+						selected.mapNotNull { guild.getChannelOrNull(Snowflake(it))?.mention }.joinToString()
 					},
 					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
 				)
@@ -162,7 +162,7 @@ class ConfigurationExtension : BaseExtension() {
 	}
 
 	private suspend fun channelChoices(guild: GuildBehavior): List<Pair<String, String>> =
-		guild.channels.filter { it.type == ChannelType.GuildCategory }.toList()
+		guild.channels.filter { it.type == ChannelType.GuildText }.toList()
 			.sortedBy { it.rawPosition }
 			.map { it.name to it.id.toString() }
 
