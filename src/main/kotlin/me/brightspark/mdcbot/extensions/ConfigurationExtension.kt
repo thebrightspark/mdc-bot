@@ -14,6 +14,7 @@ import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.GuildBehavior
+import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.builder.message.modify.embed
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
@@ -21,6 +22,10 @@ import me.brightspark.mdcbot.properties.Property
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
+/*
+	TODO: Change these to be a single command that uses button components to select which config to change.
+	 On the main config menu it can also state the current values?
+ */
 @Component
 class ConfigurationExtension : BaseExtension() {
 	private val log = KotlinLogging.logger {}
@@ -29,10 +34,33 @@ class ConfigurationExtension : BaseExtension() {
 
 	override suspend fun setup() {
 		ephemeralSlashCommand {
-			name = "admin"
-			description = "Admin commands for configuring the bot"
+			name = "config"
+			description = "Configuration commands"
 			mdcGuild()
 			check { isAdmin() }
+
+			ephemeralSubCommand {
+				name = "list"
+				description = "Lists all current config values"
+
+				action {
+					respond {
+						embed {
+							Property.ALL.forEach { prop ->
+								field(prop.name, true) {
+									val rawValue = propertyService.getRaw(prop)
+									val value = rawValue?.let { prop.deserialiseToDisplayString(guild!!, it) }
+										?: Property.VALUE_NONE
+									"""
+									**Value:** $value
+									**Raw:** $rawValue
+									""".trimIndent()
+								}
+							}
+						}
+					}
+				}
+			}
 
 			ephemeralSubCommand {
 				val property = Property.CHANNEL_LOGS
@@ -91,6 +119,7 @@ class ConfigurationExtension : BaseExtension() {
 			respond {
 				content = "Please select an option:"
 
+				val commandUser = user.asUser()
 				lateinit var messageComponents: ComponentContainer
 				messageComponents = components {
 					ephemeralSelectMenu {
@@ -105,6 +134,12 @@ class ConfigurationExtension : BaseExtension() {
 							actionConsumer(selectedValue)
 
 							val selectedReadable = readableProvider(guild!!, selectedValue)
+							loggingService.log(
+								"${property.nameReadable} has been set to $selectedReadable ($selectedValue)",
+								commandUser
+							)
+							log.info { "Config ${property.name}: Set to $selectedValue" }
+
 							messageComponents.removeAll()
 							edit {
 								content = null
@@ -133,6 +168,7 @@ class ConfigurationExtension : BaseExtension() {
 			respond {
 				content = "Please select any number of options:"
 
+				val commandUser = user.asUser()
 				lateinit var messageComponents: ComponentContainer
 				messageComponents = components {
 					ephemeralSelectMenu {
@@ -146,6 +182,12 @@ class ConfigurationExtension : BaseExtension() {
 							action(selected)
 
 							val selectedReadable = readableProvider(guild!!, selected)
+							loggingService.log(
+								"${property.nameReadable} has been set to $selectedReadable ($selected)",
+								commandUser
+							)
+							log.info { "Config ${property.name}: Set to $selected" }
+
 							messageComponents.removeAll()
 							edit {
 								content = null

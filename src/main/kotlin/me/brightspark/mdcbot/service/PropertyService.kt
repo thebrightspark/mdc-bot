@@ -8,9 +8,10 @@ import org.springframework.stereotype.Service
 class PropertyService(
 	private val botPropertyService: BotPropertyService
 ) {
-	fun <T> get(property: Property<T>): T =
-		botPropertyService.get(property.name)?.let { property.deserialise(it) } ?: property.defaultValue
+	fun getRaw(property: Property<*>): String? = botPropertyService.get(property.name)
 
-	fun <T> set(property: Property<T>, propertyValue: T) =
+	fun <T : Any?> get(property: Property<T>): T? = getRaw(property)?.let { property.deserialise(it) }
+
+	fun <T : Any?> set(property: Property<T>, propertyValue: T) =
 		botPropertyService.put(property.name, propertyValue?.let { property.serialise(it) })
 }
