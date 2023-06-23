@@ -32,7 +32,7 @@ class LoggingService(
 						user?.let { u ->
 							footer {
 								text = "${u.username}#${u.discriminator} (${u.id})"
-								icon = u.avatar?.url ?: u.defaultAvatar.url
+								icon = (u.avatar ?: u.defaultAvatar).cdnUrl.toUrl()
 							}
 						}
 					}
