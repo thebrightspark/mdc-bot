@@ -33,9 +33,15 @@ class Property<T : Any?>(
 			type = CATEGORY
 		)
 		val ROLE_ADMIN = create(
-			name = "role",
+			name = "admin-role",
 			nameReadable = "Bot admin role",
 			description = "the bot admin role",
+			type = ROLE
+		)
+		val ROLE_MODERATOR = create(
+			name = "moderator-role",
+			nameReadable = "Server moderator role",
+			description = "the server moderator role",
 			type = ROLE
 		)
 		val AUTO_DELETE_LEAVERS_CHANNELS = create(

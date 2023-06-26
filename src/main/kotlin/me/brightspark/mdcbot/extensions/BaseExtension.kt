@@ -28,14 +28,32 @@ abstract class BaseExtension : Extension() {
 
 	protected suspend fun Interaction.getMember(): Member = user.asMember(data.guildId.value!!)
 
+	private suspend fun Member.isAdmin(): Boolean = this.hasPermission(Permission.Administrator)
+		|| propertyService.get(Property.ROLE_ADMIN).let { this.roleIds.contains(it) }
+
+	private suspend fun Member.isModerator(): Boolean =
+		this.isAdmin() || propertyService.get(Property.ROLE_MODERATOR).let { this.roleIds.contains(it) }
+
 	/**
 	 * Fail if the user is not a server admin or doesn't have the bot admin role
 	 */
 	protected suspend fun CheckContext<ApplicationCommandInteractionCreateEvent>.isAdmin() {
-		failIfNot("Only bot admins can use this command!") {
-			val member = event.interaction.getMember()
-			return@failIfNot member.hasPermission(Permission.Administrator)
-				|| propertyService.get(Property.ROLE_ADMIN).let { member.roleIds.contains(it) }
+		failIfNot("Only bot admins can use this command!") { event.interaction.getMember().isAdmin() }
+	}
+
+	/**
+	 * Fail if the user does not have the server's moderator role
+	 */
+	protected suspend fun CheckContext<ApplicationCommandInteractionCreateEvent>.isModerator() {
+		failIfNot("Only moderators can use this command!") { event.interaction.getMember().isModerator() }
+	}
+
+	/**
+	 * Fail if the bot does not have the permissions
+	 */
+	protected suspend fun CheckContext<*>.botHasPermissions(vararg permissions: Permission) {
+		failIfNot("Missing permission${if (permissions.size != 1) "s" else ""} ${permissions.joinToString()}!") {
+			guildFor(event)?.getMemberOrNull(kord.selfId)?.hasPermissions(*permissions) ?: false
 		}
 	}
 }
