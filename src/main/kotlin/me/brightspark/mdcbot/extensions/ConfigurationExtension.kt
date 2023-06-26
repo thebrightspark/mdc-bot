@@ -27,17 +27,15 @@ import org.springframework.stereotype.Component
 	 On the main config menu it can also state the current values?
  */
 @Component
-class ConfigurationExtension : BaseExtension() {
+class ConfigurationExtension : BaseExtension("configuration") {
 	private val log = KotlinLogging.logger {}
-
-	override val name: String = "configuration"
 
 	override suspend fun setup() {
 		ephemeralSlashCommand {
 			name = "config"
 			description = "Configuration commands"
 			mdcGuild()
-			check { isAdmin() }
+			userRequiresAdminPermission()
 
 			ephemeralSubCommand {
 				name = "list"

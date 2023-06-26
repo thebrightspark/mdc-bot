@@ -23,6 +23,7 @@ import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.event.channel.CategoryDeleteEvent
 import dev.kord.core.event.channel.TextChannelDeleteEvent
 import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
+import dev.kord.gateway.Intent
 import dev.kord.rest.builder.message.create.embed
 import me.brightspark.mdcbot.database.model.DevChannel
 import me.brightspark.mdcbot.database.service.DevChannelService
@@ -36,15 +37,15 @@ import kotlin.time.Duration
 @Component
 class DevChannelExtension(
 	private val devChannelService: DevChannelService
-) : BaseExtension() {
+) : BaseExtension("dev-channel") {
 	private val log = KotlinLogging.logger {}
 
-	override val name: String = "dev-channel"
-
 	override suspend fun setup() {
+		intents(Intent.Guilds)
+
 		event<CategoryDeleteEvent> {
 			check {
-				failIfNot {
+				passIf {
 					propertyService.get(Property.CATEGORY_DEV).let { event.channel.id == it }
 				}
 			}
@@ -75,7 +76,7 @@ class DevChannelExtension(
 				name = "create"
 				description = "Creates a new developer channel for the given server member"
 				requireBotPermissions(Permission.ManageChannels)
-				check { isAdmin() } // TODO: Later allow this to be used by devs
+				userRequiresModeratorPermission() // TODO: Later allow this to be used by devs
 
 				action {
 					val member = arguments.member ?: event.interaction.getMember()
@@ -158,7 +159,7 @@ class DevChannelExtension(
 		publicUserCommand {
 			name = "Create dev channel"
 			mdcGuild()
-			check { isAdmin() }
+			userRequiresModeratorPermission()
 
 			action {
 				val member = event.interaction.getTarget().asMember(event.interaction.data.guildId.value!!)

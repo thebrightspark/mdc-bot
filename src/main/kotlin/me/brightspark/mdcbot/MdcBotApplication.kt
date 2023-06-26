@@ -4,7 +4,6 @@ import com.kotlindiscord.kord.extensions.ExtensibleBot
 import com.kotlindiscord.kord.extensions.checks.inGuild
 import com.kotlindiscord.kord.extensions.extensions.Extension
 import dev.kord.common.entity.Snowflake
-import dev.kord.gateway.Intent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -30,10 +29,7 @@ class MdcBotApplication {
 		mdcGuildId: Snowflake
 	): ExtensibleBot = runBlocking {
 		ExtensibleBot(token) {
-			intents(addDefaultIntents = false, addExtensionIntents = false) {
-				+Intent.Guilds
-				+Intent.GuildMessages
-			}
+			intents(addDefaultIntents = false, addExtensionIntents = true) {}
 			applicationCommands {
 				slashCommandCheck { inGuild(mdcGuildId) }
 				defaultGuild(mdcGuildId) // Just in-case I miss any
