@@ -2,7 +2,9 @@ package me.brightspark.mdcbot.extensions
 
 import com.kotlindiscord.kord.extensions.checks.guildFor
 import com.kotlindiscord.kord.extensions.checks.types.CheckContext
+import com.kotlindiscord.kord.extensions.checks.types.CheckContextWithCache
 import com.kotlindiscord.kord.extensions.commands.application.ApplicationCommand
+import com.kotlindiscord.kord.extensions.events.EventHandler
 import com.kotlindiscord.kord.extensions.extensions.Extension
 import com.kotlindiscord.kord.extensions.utils.hasPermission
 import com.kotlindiscord.kord.extensions.utils.hasPermissions
@@ -10,6 +12,7 @@ import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.interaction.Interaction
+import dev.kord.core.event.Event
 import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
 import dev.kord.gateway.Intent
 import me.brightspark.mdcbot.properties.Property
@@ -61,6 +64,13 @@ abstract class BaseExtension(override val name: String) : Extension() {
 
 	private suspend fun Member.isModerator(): Boolean =
 		this.isAdmin() || propertyService.get(Property.ROLE_MODERATOR).let { this.roleIds.contains(it) }
+
+	protected fun <T : Event> EventHandler<T>.checkIf(
+		message: String? = null,
+		callback: suspend CheckContextWithCache<T>.() -> Boolean
+	) {
+		this.check { failIfNot(message) { callback() } }
+	}
 
 	/**
 	 * Fail if the user is not a server admin or doesn't have the bot admin role

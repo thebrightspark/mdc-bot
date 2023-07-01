@@ -29,6 +29,7 @@ import me.brightspark.mdcbot.database.model.DevChannel
 import me.brightspark.mdcbot.database.service.DevChannelService
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.util.getCategory
+import me.brightspark.mdcbot.util.respondSimple
 import me.brightspark.mdcbot.util.toSimpleString
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -44,11 +45,7 @@ class DevChannelExtension(
 		intents(Intent.Guilds)
 
 		event<CategoryDeleteEvent> {
-			check {
-				passIf {
-					propertyService.get(Property.CATEGORY_DEV).let { event.channel.id == it }
-				}
-			}
+			checkIf { propertyService.get(Property.CATEGORY_DEV).let { event.channel.id == it } }
 			action {
 				loggingService.log("Dev category ${event.channel.toSimpleString()} was deleted")
 				log.info { "Dev category ${event.channel.toSimpleString()} deleted - removing all data" }
@@ -106,7 +103,7 @@ class DevChannelExtension(
 						?: run {
 							// Channel does not exist!
 							devChannelService.remove(devChannel)
-							respond { embed { description = "Your dev channel does not exist!" } }
+							respondSimple("Your dev channel does not exist!")
 							return@action
 						}
 
@@ -117,8 +114,8 @@ class DevChannelExtension(
 					}.name
 
 					loggingService.log("Renamed channel $channelId from `$oldName` to `$newName`", user)
-					respond { embed { description = "Renamed your channel to `$newName`" } }
-					log.info { "Command dev name: ${user.toSimpleString()} renamed channel $channelId from '$oldName' to '$newName'" }
+					respondSimple("Renamed your channel to `$newName`")
+					log.info { "Command dev rename: ${user.toSimpleString()} renamed channel $channelId from '$oldName' to '$newName'" }
 				}
 			}
 
@@ -189,12 +186,12 @@ class DevChannelExtension(
 		}
 
 		val categoryId = propertyService.get(Property.CATEGORY_DEV) ?: run {
-			respond { embed { description = "The dev category has not been set!" } }
+			respondSimple("The dev category has not been set!")
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
 		}
 		val category = kord.getCategory(categoryId) ?: run {
-			respond { embed { description = "The dev category could not be found!" } }
+			respondSimple("The dev category could not be found!")
 			log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
 			return
 		}
@@ -218,7 +215,7 @@ class DevChannelExtension(
 		)
 
 		loggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}", creator)
-		respond { embed { description = "New dev channel ${channel.mention} created, owned by ${member.mention}" } }
+		respondSimple("New dev channel ${channel.mention} created, owned by ${member.mention}")
 		log.info { "Command createDevChannel: ${creator.toSimpleString()} created new dev channel ${channel.toSimpleString()} for member ${member.toSimpleString()}" }
 	}
 
