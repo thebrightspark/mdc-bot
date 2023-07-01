@@ -50,6 +50,12 @@ class Property<T : Any?>(
 			description = "the channels to delete message from of users that have left the server",
 			type = CHANNELS
 		)
+		val AUTO_PUBLISH_CHANNELS = create(
+			name = "auto-publish-channels",
+			nameReadable = "Auto publish channels",
+			description = "the channels to automatically publish all messages that are posted in",
+			type = CHANNELS
+		)
 
 		private fun <T> create(
 			name: String,
