@@ -59,10 +59,10 @@ abstract class BaseExtension(override val name: String) : Extension() {
 
 	protected suspend fun Interaction.getMember(): Member = user.asMember(data.guildId.value!!)
 
-	private suspend fun Member.isAdmin(): Boolean = this.hasPermission(Permission.Administrator)
+	protected suspend fun Member.isAdmin(): Boolean = this.hasPermission(Permission.Administrator)
 		|| propertyService.get(Property.ROLE_ADMIN).let { this.roleIds.contains(it) }
 
-	private suspend fun Member.isModerator(): Boolean =
+	protected suspend fun Member.isModerator(): Boolean =
 		this.isAdmin() || propertyService.get(Property.ROLE_MODERATOR).let { this.roleIds.contains(it) }
 
 	protected fun <T : Event> EventHandler<T>.checkIf(
