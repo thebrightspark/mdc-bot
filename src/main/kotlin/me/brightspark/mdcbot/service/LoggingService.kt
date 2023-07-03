@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import me.brightspark.mdcbot.properties.Property
+import me.brightspark.mdcbot.util.toSimpleString
 import org.springframework.stereotype.Service
 
 @Service
@@ -22,17 +23,19 @@ class LoggingService(
 		get() = propertyService.get(Property.CHANNEL_LOGS)
 
 	fun log(message: String, user: User? = null) {
-		logChannel?.let {
+		logChannel?.let { logChannelId ->
 			coroutineScope.launch {
-				val channel = getKoin().get<Kord>().getGuildOrNull(mdcGuildId)?.getChannel(it)
-				if (channel is GuildMessageChannel)
-					channel.createEmbed {
-						description = message
-						timestamp = Clock.System.now()
-						user?.let { u ->
-							footer {
-								text = "${u.username}#${u.discriminator} (${u.id})"
-								icon = (u.avatar ?: u.defaultAvatar).cdnUrl.toUrl()
+				getKoin().get<Kord>().getGuildOrNull(mdcGuildId)?.getChannel(logChannelId)
+					?.takeIf { it is GuildMessageChannel }
+					?.let {
+						(it as GuildMessageChannel).createEmbed {
+							description = message
+							timestamp = Clock.System.now()
+							user?.let { u ->
+								footer {
+									text = u.toSimpleString()
+									icon = (u.avatar ?: u.defaultAvatar).cdnUrl.toUrl()
+								}
 							}
 						}
 					}

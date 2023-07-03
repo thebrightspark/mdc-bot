@@ -22,7 +22,7 @@ import java.util.*
 fun <T> Optional<T>.ifPresentOrElse(presentConsumer: (T) -> Unit, elseRunnable: () -> Unit): Unit =
 	if (isPresent) presentConsumer(get()) else elseRunnable()
 
-fun User.toSimpleString(): String = "${this.username}#${this.discriminator} (${this.id})"
+fun User.toSimpleString(): String = "${this.username} (${this.id})"
 
 fun Channel.toSimpleString(): String = "${this.data.name.value} (${this.id})"
 
