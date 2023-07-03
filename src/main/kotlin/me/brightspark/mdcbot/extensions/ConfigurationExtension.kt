@@ -65,17 +65,6 @@ class ConfigurationExtension : BaseExtension("configuration") {
 				setupConfigMenuSingle(
 					property = property,
 					optionsProvider = { channelChoices(it) },
-					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.mention },
-					actionConsumer = { propertyService.set(property, Snowflake(it)) }
-				)
-			}
-
-			ephemeralSubCommand {
-				val property = Property.ROLE_ADMIN
-				setupConfigMenuSingle(
-					property = property,
-					optionsProvider = { roleChoices(it) },
-					readableProvider = { guild, selected -> guild.getRoleOrNull(Snowflake(selected))?.mention },
 					actionConsumer = { propertyService.set(property, Snowflake(it)) }
 				)
 			}
@@ -85,7 +74,24 @@ class ConfigurationExtension : BaseExtension("configuration") {
 				setupConfigMenuSingle(
 					property = property,
 					optionsProvider = { categoryChoices(it) },
-					readableProvider = { guild, selected -> guild.getChannelOrNull(Snowflake(selected))?.mention },
+					actionConsumer = { propertyService.set(property, Snowflake(it)) }
+				)
+			}
+
+			ephemeralSubCommand {
+				val property = Property.ROLE_ADMIN
+				setupConfigMenuSingle(
+					property = property,
+					optionsProvider = { roleChoices(it) },
+					actionConsumer = { propertyService.set(property, Snowflake(it)) }
+				)
+			}
+
+			ephemeralSubCommand {
+				val property = Property.ROLE_MODERATOR
+				setupConfigMenuSingle(
+					property = property,
+					optionsProvider = { roleChoices(it) },
 					actionConsumer = { propertyService.set(property, Snowflake(it)) }
 				)
 			}
@@ -95,9 +101,15 @@ class ConfigurationExtension : BaseExtension("configuration") {
 				setupConfigMenuMulti(
 					property = property,
 					optionsProvider = { channelChoices(it) },
-					readableProvider = { guild, selected ->
-						selected.mapNotNull { guild.getChannelOrNull(Snowflake(it))?.mention }.joinToString()
-					},
+					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
+				)
+			}
+
+			ephemeralSubCommand {
+				val property = Property.AUTO_PUBLISH_CHANNELS
+				setupConfigMenuMulti(
+					property = property,
+					optionsProvider = { channelChoices(it) },
 					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
 				)
 			}
@@ -107,7 +119,6 @@ class ConfigurationExtension : BaseExtension("configuration") {
 	private fun <ARGS : Arguments> EphemeralSlashCommand<ARGS, ModalForm>.setupConfigMenuSingle(
 		property: Property<*>,
 		optionsProvider: (suspend (GuildBehavior) -> List<Pair<String, String>>),
-		readableProvider: (suspend (GuildBehavior, String) -> String?),
 		actionConsumer: (String) -> Unit
 	) {
 		name = property.name
@@ -131,9 +142,9 @@ class ConfigurationExtension : BaseExtension("configuration") {
 							val selectedValue = selected.first()
 							actionConsumer(selectedValue)
 
-							val selectedReadable = readableProvider(guild!!, selectedValue)
+							val selectedReadable = property.deserialiseToDisplayString(guild!!, selectedValue)
 							loggingService.log(
-								"${property.nameReadable} has been set to $selectedReadable ($selectedValue)",
+								"${property.nameReadable} has been set to $selectedReadable (Raw: $selectedValue)",
 								commandUser
 							)
 							log.info { "Config ${property.name}: Set to $selectedValue" }
@@ -156,7 +167,6 @@ class ConfigurationExtension : BaseExtension("configuration") {
 	private fun <ARGS : Arguments, PROP> EphemeralSlashCommand<ARGS, ModalForm>.setupConfigMenuMulti(
 		property: Property<PROP>,
 		optionsProvider: (suspend (GuildBehavior) -> List<Pair<String, String>>),
-		readableProvider: (suspend (GuildBehavior, List<String>) -> String?),
 		action: (List<String>) -> Unit
 	) {
 		name = property.name
@@ -179,9 +189,9 @@ class ConfigurationExtension : BaseExtension("configuration") {
 						action {
 							action(selected)
 
-							val selectedReadable = readableProvider(guild!!, selected)
+							val selectedReadable = property.deserialiseToDisplayString(guild!!, selected.joinToString())
 							loggingService.log(
-								"${property.nameReadable} has been set to $selectedReadable ($selected)",
+								"${property.nameReadable} has been set to $selectedReadable (Raw: $selected)",
 								commandUser
 							)
 							log.info { "Config ${property.name}: Set to $selected" }
