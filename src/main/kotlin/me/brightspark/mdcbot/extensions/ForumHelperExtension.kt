@@ -19,6 +19,7 @@ import dev.kord.core.entity.channel.ForumChannel
 import dev.kord.core.entity.channel.thread.ThreadChannel
 import dev.kord.core.entity.interaction.AutoCompleteInteraction
 import dev.kord.core.entity.interaction.ChannelOptionValue
+import dev.kord.gateway.Intent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.joinAll
@@ -34,6 +35,8 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 	private val log = KotlinLogging.logger {}
 
 	override suspend fun setup() {
+		intents(Intent.Guilds)
+
 		ephemeralSlashCommand {
 			name = "forum"
 			description = "Commands for managing forum channels"
