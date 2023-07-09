@@ -39,9 +39,7 @@ class AutoModerationExtension : BaseExtension("auto-moderation") {
 			check { isNotBot() }
 			check { botHasPermissions(Permission.ManageMessages) }
 			checkIf {
-				propertyService.get(Property.MODERATE_INVITES_CHANNEL_IGNORE)
-					?.let { !it.contains(event.message.channel.id) }
-					?: true
+				!propertyService.contains(Property.MODERATE_INVITES_CHANNEL_IGNORE) { it == event.message.channel.id }
 			}
 			checkIf { event.member?.let { !it.isModerator() } ?: false }
 			action { handleInviteLinks() }

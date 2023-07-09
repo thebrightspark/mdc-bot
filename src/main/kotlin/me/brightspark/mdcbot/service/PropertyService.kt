@@ -14,4 +14,10 @@ class PropertyService(
 
 	fun <T : Any?> set(property: Property<T>, propertyValue: T) =
 		botPropertyService.put(property.name, propertyValue?.let { property.serialise(it) })
+
+	/**
+	 * Util function to check if a single value of a [List] type property matches the [predicate].
+	 */
+	fun <T : Any?> contains(property: Property<List<T>>, predicate: (T) -> Boolean): Boolean =
+		get(property)?.any(predicate) ?: false
 }

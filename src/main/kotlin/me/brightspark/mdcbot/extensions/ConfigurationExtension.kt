@@ -14,6 +14,7 @@ import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.GuildBehavior
+import dev.kord.core.entity.channel.TopGuildChannel
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.builder.message.modify.embed
 import kotlinx.coroutines.flow.filter
@@ -110,6 +111,15 @@ class ConfigurationExtension : BaseExtension("configuration") {
 				setupConfigMenuMulti(
 					property = property,
 					optionsProvider = { channelChoices(it) },
+					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
+				)
+			}
+
+			ephemeralSubCommand {
+				val property = Property.MODERATE_INVITES_CHANNEL_IGNORE
+				setupConfigMenuMulti(
+					property = property,
+					optionsProvider = { channelOrCategoryChoices(it) },
 					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
 				)
 			}
@@ -211,15 +221,21 @@ class ConfigurationExtension : BaseExtension("configuration") {
 		}
 	}
 
+	private suspend fun internalChannelChoices(
+		guild: GuildBehavior,
+		filter: (TopGuildChannel) -> Boolean
+	): List<Pair<String, String>> = guild.channels.filter(filter).toList()
+		.sortedBy { it.rawPosition }
+		.map { it.name to it.id.toString() }
+
 	private suspend fun channelChoices(guild: GuildBehavior): List<Pair<String, String>> =
-		guild.channels.filter { it.type == ChannelType.GuildText }.toList()
-			.sortedBy { it.rawPosition }
-			.map { it.name to it.id.toString() }
+		internalChannelChoices(guild) { it.type == ChannelType.GuildText }
 
 	private suspend fun categoryChoices(guild: GuildBehavior): List<Pair<String, String>> =
-		guild.channels.filter { it.type == ChannelType.GuildCategory }.toList()
-			.sortedBy { it.rawPosition }
-			.map { it.name to it.id.toString() }
+		internalChannelChoices(guild) { it.type == ChannelType.GuildCategory }
+
+	private suspend fun channelOrCategoryChoices(guild: GuildBehavior): List<Pair<String, String>> =
+		internalChannelChoices(guild) { it.type == ChannelType.GuildCategory || it.type == ChannelType.GuildText }
 
 	private suspend fun roleChoices(guild: GuildBehavior): List<Pair<String, String>> =
 		guild.roles.toList()
