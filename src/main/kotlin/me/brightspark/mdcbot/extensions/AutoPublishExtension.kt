@@ -21,11 +21,7 @@ class AutoPublishExtension : BaseExtension("auto-publish") {
 			check { isNotBot() }
 			check { botHasPermissions(Permission.ManageChannels) }
 			checkIf { event.message.channel is NewsChannelBehavior }
-			checkIf {
-				propertyService.get(Property.AUTO_PUBLISH_CHANNELS)
-					?.contains(event.message.channel.id)
-					?: false
-			}
+			checkIf { propContainsChannelOrParentCategory(Property.AUTO_PUBLISH_CHANNELS, event.message.channel) }
 			action {
 				val message = event.message
 				log.info { "Auto-publishing message ${message.id} in channel ${message.channel.id}" }

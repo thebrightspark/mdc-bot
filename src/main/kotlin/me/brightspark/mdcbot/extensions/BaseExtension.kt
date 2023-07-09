@@ -10,7 +10,10 @@ import com.kotlindiscord.kord.extensions.utils.hasPermission
 import com.kotlindiscord.kord.extensions.utils.hasPermissions
 import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Snowflake
+import dev.kord.core.behavior.channel.ChannelBehavior
+import dev.kord.core.behavior.channel.asChannelOf
 import dev.kord.core.entity.Member
+import dev.kord.core.entity.channel.CategorizableChannel
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.core.event.Event
 import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
@@ -93,5 +96,17 @@ abstract class BaseExtension(override val name: String) : Extension() {
 		failIfNot("Missing permission${if (permissions.size != 1) "s" else ""} ${permissions.joinToString()}!") {
 			guildFor(event)?.getMemberOrNull(kord.selfId)?.hasPermissions(*permissions) ?: false
 		}
+	}
+
+	protected suspend fun propContainsChannelOrParentCategory(
+		property: Property<List<Snowflake>>,
+		channel: ChannelBehavior
+	): Boolean {
+		val channelId = channel.id
+		val propChannels = propertyService.get(property)
+		fun propHasId(id: Snowflake): Boolean = propChannels?.any { id == it } == true
+
+		return propHasId(channelId) ||
+			channel.asChannelOf<CategorizableChannel>().categoryId?.let { propHasId(it) } ?: false
 	}
 }

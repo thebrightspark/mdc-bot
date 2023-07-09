@@ -110,7 +110,7 @@ class ConfigurationExtension : BaseExtension("configuration") {
 				val property = Property.AUTO_PUBLISH_CHANNELS
 				setupConfigMenuMulti(
 					property = property,
-					optionsProvider = { channelChoices(it) },
+					optionsProvider = { channelOrCategoryChoices(it) },
 					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
 				)
 			}
