@@ -56,6 +56,12 @@ class Property<T : Any?>(
 			description = "the channels to automatically publish all messages that are posted in",
 			type = CHANNELS
 		)
+		val MODERATE_INVITES_CHANNEL_IGNORE = create(
+			name = "moderate-invites-channel-ignore",
+			nameReadable = "Auto-Moderate Invites Ignore Channels",
+			description = "the channels to ignore when auto-moderating posted Discord server invite links",
+			type = CHANNELS
+		)
 
 		private fun <T> create(
 			name: String,
