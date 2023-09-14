@@ -17,6 +17,8 @@ jobs:
           java-version: 17
           distribution: temurin
 
+      - run: chmod +x gradle/wrapper/gradle-wrapper.jar
+
       - name: Build
         uses: gradle/gradle-build-action@v2
         with:
