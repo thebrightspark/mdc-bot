@@ -193,6 +193,7 @@ class ConfigurationExtension : BaseExtension("configuration") {
 						maximumChoices = null
 
 						// Options
+						// FIXME: This only supports 25 options! Need a better solution
 						optionsProvider(guild!!).forEach { option(it.first, it.second) }
 
 						// Interaction

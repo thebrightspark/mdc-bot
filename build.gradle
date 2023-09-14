@@ -43,9 +43,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-community-dialects
     implementation 'org.hibernate.orm:hibernate-community-dialects'
 
-    implementation 'com.kotlindiscord.kord.extensions:kord-extensions:1.5.8-SNAPSHOT'
+    implementation 'com.kotlindiscord.kord.extensions:kord-extensions:1.5.9-SNAPSHOT'
     // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.6'
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
     // https://mvnrepository.com/artifact/io.github.oshai/kotlin-logging-jvm
-    implementation 'io.github.oshai:kotlin-logging-jvm:4.0.0'
+    // Removed for now, as apparently Kord includes an older version already
+//    implementation 'io.github.oshai:kotlin-logging-jvm:5.1.0'
 }

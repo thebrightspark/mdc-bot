@@ -167,7 +167,7 @@ class DevChannelExtension(
 
 	private suspend fun PublicInteractionContext.createDevChannel(
 		member: Member,
-		name: String = "${member.displayName}-mods",
+		name: String = "${member.effectiveName}-mods",
 		creator: User
 	) {
 		// Check if the member already owns a channel
