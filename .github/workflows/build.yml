@@ -1,8 +1,6 @@
-#https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#Publishing-using-gradle
-
 name: Build
 
-on: pull_request
+on: [ push, pull_request ]
 
 jobs:
   build:
