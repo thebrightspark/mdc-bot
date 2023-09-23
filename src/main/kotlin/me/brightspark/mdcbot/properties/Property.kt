@@ -32,23 +32,11 @@ class Property<T : Any?>(
 			description = "the developer category, where all developer channels will be created under",
 			type = CATEGORY
 		)
-		val ROLE_ADMIN = create(
-			name = "admin-role",
-			nameReadable = "Bot admin role",
-			description = "the bot admin role",
-			type = ROLE
-		)
 		val ROLE_MODERATOR = create(
 			name = "moderator-role",
 			nameReadable = "Server moderator role",
 			description = "the server moderator role",
 			type = ROLE
-		)
-		val AUTO_DELETE_LEAVERS_CHANNELS = create(
-			name = "auto-delete-leavers-channels",
-			nameReadable = "Auto delete leavers channels",
-			description = "the channels to delete message from of users that have left the server",
-			type = CHANNELS
 		)
 		val AUTO_PUBLISH_CHANNELS = create(
 			name = "auto-publish-channels",

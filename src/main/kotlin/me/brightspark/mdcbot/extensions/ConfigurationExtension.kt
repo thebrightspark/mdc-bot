@@ -80,15 +80,6 @@ class ConfigurationExtension : BaseExtension("configuration") {
 			}
 
 			ephemeralSubCommand {
-				val property = Property.ROLE_ADMIN
-				setupConfigMenuSingle(
-					property = property,
-					optionsProvider = { roleChoices(it) },
-					actionConsumer = { propertyService.set(property, Snowflake(it)) }
-				)
-			}
-
-			ephemeralSubCommand {
 				val property = Property.ROLE_MODERATOR
 				setupConfigMenuSingle(
 					property = property,
@@ -96,15 +87,6 @@ class ConfigurationExtension : BaseExtension("configuration") {
 					actionConsumer = { propertyService.set(property, Snowflake(it)) }
 				)
 			}
-
-//			ephemeralSubCommand {
-//				val property = Property.AUTO_DELETE_LEAVERS_CHANNELS
-//				setupConfigMenuMulti(
-//					property = property,
-//					optionsProvider = { channelChoices(it) },
-//					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
-//				)
-//			}
 
 			ephemeralSubCommand {
 				val property = Property.AUTO_PUBLISH_CHANNELS
