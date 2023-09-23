@@ -14,6 +14,7 @@ import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.GuildBehavior
+import dev.kord.core.entity.Role
 import dev.kord.core.entity.channel.TopGuildChannel
 import dev.kord.rest.builder.message.create.embed
 import dev.kord.rest.builder.message.modify.embed
@@ -83,7 +84,13 @@ class ConfigurationExtension : BaseExtension("configuration") {
 				val property = Property.ROLE_MODERATOR
 				setupConfigMenuSingle(
 					property = property,
-					optionsProvider = { roleChoices(it) },
+					optionsProvider = {
+						roleChoices(it) { role ->
+							role.tags
+								?.run { botId == null && integrationId == null && !isPremiumRole && !isAvailableForPurchase }
+								?: true
+						}
+					},
 					actionConsumer = { propertyService.set(property, Snowflake(it)) }
 				)
 			}
@@ -175,7 +182,7 @@ class ConfigurationExtension : BaseExtension("configuration") {
 						maximumChoices = null
 
 						// Options
-						// FIXME: This only supports 25 options! Need a better solution
+						// FYI This only supports 25 options... Need a better solution ideally
 						optionsProvider(guild!!).forEach { option(it.first, it.second) }
 
 						// Interaction
@@ -209,6 +216,7 @@ class ConfigurationExtension : BaseExtension("configuration") {
 		filter: (TopGuildChannel) -> Boolean
 	): List<Pair<String, String>> = guild.channels.filter(filter).toList()
 		.sortedBy { it.rawPosition }
+		.take(25)
 		.map { it.name to it.id.toString() }
 
 	private suspend fun channelChoices(guild: GuildBehavior): List<Pair<String, String>> =
@@ -220,8 +228,13 @@ class ConfigurationExtension : BaseExtension("configuration") {
 	private suspend fun channelOrCategoryChoices(guild: GuildBehavior): List<Pair<String, String>> =
 		internalChannelChoices(guild) { it.type == ChannelType.GuildCategory || it.type == ChannelType.GuildText }
 
-	private suspend fun roleChoices(guild: GuildBehavior): List<Pair<String, String>> =
+	private suspend fun roleChoices(
+		guild: GuildBehavior,
+		filter: ((Role) -> Boolean)? = null
+	): List<Pair<String, String>> =
 		guild.roles.toList()
+			.run { filter?.let { filter(it) } ?: this }
 			.sortedBy { it.rawPosition }
+			.take(25)
 			.map { it.name to it.id.toString() }
 }
