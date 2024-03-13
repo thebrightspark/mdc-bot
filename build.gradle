@@ -39,7 +39,7 @@ dependencies {
 
     runtimeOnly 'com.h2database:h2'
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    implementation 'org.xerial:sqlite-jdbc:3.45.1.0'
+    implementation 'org.xerial:sqlite-jdbc:3.45.2.0'
     // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-community-dialects
     implementation 'org.hibernate.orm:hibernate-community-dialects'
 
