@@ -1,9 +1,9 @@
 package me.brightspark.mdcbot
 
-import com.kotlindiscord.kord.extensions.ExtensibleBot
-import com.kotlindiscord.kord.extensions.checks.inGuild
-import com.kotlindiscord.kord.extensions.extensions.Extension
 import dev.kord.common.entity.Snowflake
+import dev.kordex.core.ExtensibleBot
+import dev.kordex.core.checks.inGuild
+import dev.kordex.core.extensions.Extension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -19,12 +19,11 @@ class MdcBotApplication {
 	fun coroutineScope(): CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 	@Bean
-	fun mdcGuildId(@Value("\${bot.guild}") guildId: Long): Snowflake = Snowflake(guildId)
+	fun mdcGuildId(@Value($$"${bot.guild}") guildId: Long): Snowflake = Snowflake(guildId)
 
 	@Bean
 	fun bot(
-		@Value("\${bot.token}") token: String,
-		coroutineScope: CoroutineScope,
+		@Value($$"${bot.token}") token: String,
 		extensions: Collection<Extension>,
 		mdcGuildId: Snowflake
 	): ExtensibleBot = runBlocking {

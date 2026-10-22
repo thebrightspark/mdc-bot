@@ -1,8 +1,8 @@
 package me.brightspark.mdcbot.database.service
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.database.model.DevChannel
 import me.brightspark.mdcbot.database.repository.DevChannelRepo
-import mu.KotlinLogging
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable

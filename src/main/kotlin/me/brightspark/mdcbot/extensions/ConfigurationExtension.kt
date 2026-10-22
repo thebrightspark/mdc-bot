@@ -1,240 +1,125 @@
 package me.brightspark.mdcbot.extensions
 
-import com.kotlindiscord.kord.extensions.commands.Arguments
-import com.kotlindiscord.kord.extensions.commands.application.slash.EphemeralSlashCommand
-import com.kotlindiscord.kord.extensions.commands.application.slash.ephemeralSubCommand
-import com.kotlindiscord.kord.extensions.components.ComponentContainer
-import com.kotlindiscord.kord.extensions.components.applyComponents
-import com.kotlindiscord.kord.extensions.components.components
-import com.kotlindiscord.kord.extensions.components.ephemeralSelectMenu
-import com.kotlindiscord.kord.extensions.components.forms.ModalForm
-import com.kotlindiscord.kord.extensions.extensions.ephemeralSlashCommand
-import com.kotlindiscord.kord.extensions.types.edit
-import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.ChannelType
-import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.GuildBehavior
-import dev.kord.core.entity.Role
-import dev.kord.core.entity.channel.TopGuildChannel
-import dev.kord.rest.builder.message.create.embed
-import dev.kord.rest.builder.message.modify.embed
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.toList
+import dev.kord.core.behavior.UserBehavior
+import dev.kordex.core.commands.Arguments
+import dev.kordex.core.commands.application.slash.EphemeralSlashCommand
+import dev.kordex.core.commands.application.slash.ephemeralSubCommand
+import dev.kordex.core.commands.converters.impl.optionalChannel
+import dev.kordex.core.commands.converters.impl.optionalRole
+import dev.kordex.core.components.forms.ModalForm
+import dev.kordex.core.extensions.ephemeralSlashCommand
+import dev.kordex.core.types.EphemeralInteractionContext
+import i18n.Translations
+import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.properties.Property
-import mu.KotlinLogging
+import me.brightspark.mdcbot.util.respondEmbed
+import me.brightspark.mdcbot.util.respondSimple
 import org.springframework.stereotype.Component
 
-/*
-	TODO: Change these to be a single command that uses button components to select which config to change.
-	 On the main config menu it can also state the current values?
- */
 @Component
 class ConfigurationExtension : BaseExtension("configuration") {
 	private val log = KotlinLogging.logger {}
 
 	override suspend fun setup() {
 		ephemeralSlashCommand {
-			name = "config"
-			description = "Configuration commands"
+			name = Translations.Command.Config.name
+			description = Translations.Command.Config.desc
 			mdcGuild()
 			userRequiresAdminPermission()
 
 			ephemeralSubCommand {
-				name = "list"
-				description = "Lists all current config values"
+				name = Translations.Command.Config.List.name
+				description = Translations.Command.Config.List.desc
 
 				action {
-					respond {
-						embed {
-							Property.ALL.forEach { prop ->
-								field(prop.name, true) {
-									val rawValue = propertyService.getRaw(prop)
-									val value = rawValue?.let { prop.deserialiseToDisplayString(guild!!, it) }
-										?: Property.VALUE_NONE
-									"""
-									**Value:** $value
-									**Raw:** $rawValue
-									""".trimIndent()
-								}
+					respondEmbed {
+						Property.ALL.forEach { prop ->
+							field(prop.nameTranslated, true) {
+								val rawValue = propertyService.getRaw(prop)
+								val value = prop.deserialiseToDisplayString(guild!!, rawValue)
+								Translations.Command.Config.List.Response.success.translate(value, rawValue)
 							}
 						}
 					}
 				}
 			}
 
-			ephemeralSubCommand {
-				val property = Property.CHANNEL_LOGS
-				setupConfigMenuSingle(
-					property = property,
-					optionsProvider = { channelChoices(it) },
-					actionConsumer = { propertyService.set(property, Snowflake(it)) }
-				)
+			ephemeralSubCommand(::ChannelLogsArguments) {
+				setupPropertyCommand(Property.CHANNEL_LOGS) { it.channel?.id }
 			}
 
-			ephemeralSubCommand {
-				val property = Property.CATEGORY_DEV
-				setupConfigMenuSingle(
-					property = property,
-					optionsProvider = { categoryChoices(it) },
-					actionConsumer = { propertyService.set(property, Snowflake(it)) }
-				)
+			ephemeralSubCommand(::CategoryDevArguments) {
+				setupPropertyCommand(Property.CATEGORY_DEV) { it.category?.id }
 			}
 
-			ephemeralSubCommand {
-				val property = Property.ROLE_MODERATOR
-				setupConfigMenuSingle(
-					property = property,
-					optionsProvider = {
-						roleChoices(it) { role ->
-							role.tags
-								?.run { botId == null && integrationId == null && !isPremiumRole && !isAvailableForPurchase }
-								?: true
-						}
-					},
-					actionConsumer = { propertyService.set(property, Snowflake(it)) }
-				)
+			ephemeralSubCommand(::RoleModeratorArguments) {
+				setupPropertyCommand(Property.ROLE_MODERATOR) { it.role?.id }
 			}
 
-			ephemeralSubCommand {
-				val property = Property.AUTO_PUBLISH_CHANNELS
-				setupConfigMenuMulti(
-					property = property,
-					optionsProvider = { channelOrCategoryChoices(it) },
-					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
-				)
-			}
-
-			ephemeralSubCommand {
-				val property = Property.MODERATE_INVITES_CHANNEL_IGNORE
-				setupConfigMenuMulti(
-					property = property,
-					optionsProvider = { channelOrCategoryChoices(it) },
-					action = { value -> propertyService.set(property, value.map { Snowflake(it) }) }
-				)
-			}
+//			ephemeralSubCommand(::ChannelsAutoPublishArguments) {
+//				setupPropertyCommand(Property.AUTO_PUBLISH_CHANNELS) { it.channels.map(Channel::id) }
+//			}
 		}
 	}
 
-	private fun <ARGS : Arguments> EphemeralSlashCommand<ARGS, ModalForm>.setupConfigMenuSingle(
-		property: Property<*>,
-		optionsProvider: (suspend (GuildBehavior) -> List<Pair<String, String>>),
-		actionConsumer: (String) -> Unit
+	class ChannelLogsArguments : Arguments() {
+		val channel by optionalChannel {
+			name = Translations.Command.Config.Set.ChannelLogs.Arg.Channel.name
+			description = Translations.Command.Config.Set.ChannelLogs.Arg.Channel.desc
+			requireChannelType(ChannelType.GuildText)
+		}
+	}
+
+	class CategoryDevArguments : Arguments() {
+		val category by optionalChannel {
+			name = Translations.Command.Config.Set.CategoryDev.Arg.Category.name
+			description = Translations.Command.Config.Set.CategoryDev.Arg.Category.desc
+			requireChannelType(ChannelType.GuildCategory)
+		}
+	}
+
+	class RoleModeratorArguments : Arguments() {
+		val role by optionalRole {
+			name = Translations.Command.Config.Set.RoleModerator.Arg.Role.name
+			description = Translations.Command.Config.Set.RoleModerator.Arg.Role.desc
+		}
+	}
+
+	// FIXME: This doesn't work atm - the value converter throws an error on use
+//	class ChannelsAutoPublishArguments : Arguments() {
+//		val channels by channelList {
+//			name = Translations.Command.Config.Set.AutoPublish.Arg.Channels.name
+//			description = Translations.Command.Config.Set.AutoPublish.Arg.Channels.desc
+//			requireChannelType(ChannelType.GuildText)
+//		}
+//	}
+
+	private fun <ARGS : Arguments, T> EphemeralSlashCommand<ARGS, ModalForm>.setupPropertyCommand(
+		property: Property<T>,
+		argValueGetter: (ARGS) -> T
 	) {
 		name = property.name
-		description = "Sets ${property.description}"
-
+		description = Translations.Command.Config.Set.desc.withOrdinalPlaceholders(property.description)
 		action {
-			respond {
-				content = "Please select an option:"
-
-				val commandUser = user.asUser()
-				lateinit var messageComponents: ComponentContainer
-				messageComponents = components {
-					ephemeralSelectMenu {
-						maximumChoices = 1
-
-						// Options
-						optionsProvider(guild!!).forEach { option(it.first, it.second) }
-
-						// Interaction
-						action {
-							val selectedValue = selected.first()
-							actionConsumer(selectedValue)
-
-							val selectedReadable = property.deserialiseToDisplayString(guild!!, selectedValue)
-							loggingService.log(
-								"${property.nameReadable} has been set to $selectedReadable (Raw: $selectedValue)",
-								commandUser
-							)
-							log.info { "Config ${property.name}: Set to $selectedValue" }
-
-							messageComponents.removeAll()
-							edit {
-								content = null
-								applyComponents(messageComponents)
-								embed {
-									description = "${property.nameReadable} has been set to $selectedReadable"
-								}
-							}
-						}
-					}
-				}
-			}
+			setProperty(guild!!, user, argValueGetter(arguments), property)
 		}
 	}
 
-	private fun <ARGS : Arguments, PROP> EphemeralSlashCommand<ARGS, ModalForm>.setupConfigMenuMulti(
-		property: Property<PROP>,
-		optionsProvider: (suspend (GuildBehavior) -> List<Pair<String, String>>),
-		action: (List<String>) -> Unit
+	private suspend fun <T> EphemeralInteractionContext.setProperty(
+		guild: GuildBehavior,
+		user: UserBehavior,
+		value: T,
+		property: Property<T>
 	) {
-		name = property.name
-		description = "Sets ${property.description}"
-
-		action {
-			respond {
-				content = "Please select any number of options:"
-
-				val commandUser = user.asUser()
-				lateinit var messageComponents: ComponentContainer
-				messageComponents = components {
-					ephemeralSelectMenu {
-						maximumChoices = null
-
-						// Options
-						// FYI This only supports 25 options... Need a better solution ideally
-						optionsProvider(guild!!).forEach { option(it.first, it.second) }
-
-						// Interaction
-						action {
-							action(selected)
-
-							val selectedReadable = property.deserialiseToDisplayString(guild!!, selected.joinToString())
-							loggingService.log(
-								"${property.nameReadable} has been set to $selectedReadable (Raw: $selected)",
-								commandUser
-							)
-							log.info { "Config ${property.name}: Set to $selected" }
-
-							messageComponents.removeAll()
-							edit {
-								content = null
-								applyComponents(messageComponents)
-								embed {
-									description = "${property.nameReadable} has been set to $selectedReadable"
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		propertyService.set(property, value)
+		val selectedReadable = property.deserialiseToDisplayString(guild, value?.toString())
+		loggingService.log(
+			"${property.longNameTranslated} has been set to $selectedReadable (Raw: $value)",
+			user.asUser()
+		)
+		log.info { "Config ${property.id}: Set to $value" }
+		respondSimple("${property.longNameTranslated} has been set to $selectedReadable")
 	}
-
-	private suspend fun internalChannelChoices(
-		guild: GuildBehavior,
-		filter: (TopGuildChannel) -> Boolean
-	): List<Pair<String, String>> = guild.channels.filter(filter).toList()
-		.sortedBy { it.rawPosition }
-		.take(25)
-		.map { it.name to it.id.toString() }
-
-	private suspend fun channelChoices(guild: GuildBehavior): List<Pair<String, String>> =
-		internalChannelChoices(guild) { it.type == ChannelType.GuildText }
-
-	private suspend fun categoryChoices(guild: GuildBehavior): List<Pair<String, String>> =
-		internalChannelChoices(guild) { it.type == ChannelType.GuildCategory }
-
-	private suspend fun channelOrCategoryChoices(guild: GuildBehavior): List<Pair<String, String>> =
-		internalChannelChoices(guild) { it.type == ChannelType.GuildCategory || it.type == ChannelType.GuildText }
-
-	private suspend fun roleChoices(
-		guild: GuildBehavior,
-		filter: ((Role) -> Boolean)? = null
-	): List<Pair<String, String>> =
-		guild.roles.toList()
-			.run { filter?.let { filter(it) } ?: this }
-			.sortedBy { it.rawPosition }
-			.take(25)
-			.map { it.name to it.id.toString() }
 }

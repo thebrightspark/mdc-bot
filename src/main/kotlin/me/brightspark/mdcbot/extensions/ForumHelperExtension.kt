@@ -1,14 +1,5 @@
 package me.brightspark.mdcbot.extensions
 
-import com.kotlindiscord.kord.extensions.DISCORD_GREEN
-import com.kotlindiscord.kord.extensions.DISCORD_YELLOW
-import com.kotlindiscord.kord.extensions.commands.Arguments
-import com.kotlindiscord.kord.extensions.commands.application.slash.ephemeralSubCommand
-import com.kotlindiscord.kord.extensions.commands.converters.impl.channel
-import com.kotlindiscord.kord.extensions.commands.converters.impl.string
-import com.kotlindiscord.kord.extensions.extensions.ephemeralSlashCommand
-import com.kotlindiscord.kord.extensions.utils.FilterStrategy
-import com.kotlindiscord.kord.extensions.utils.suggestStringCollection
 import dev.kord.common.entity.ChannelType
 import dev.kord.common.entity.ForumTag
 import dev.kord.core.behavior.channel.GuildChannelBehavior
@@ -20,6 +11,17 @@ import dev.kord.core.entity.channel.thread.ThreadChannel
 import dev.kord.core.entity.interaction.AutoCompleteInteraction
 import dev.kord.core.entity.interaction.ChannelOptionValue
 import dev.kord.gateway.Intent
+import dev.kordex.core.DISCORD_GREEN
+import dev.kordex.core.DISCORD_YELLOW
+import dev.kordex.core.commands.Arguments
+import dev.kordex.core.commands.application.slash.ephemeralSubCommand
+import dev.kordex.core.commands.converters.impl.channel
+import dev.kordex.core.commands.converters.impl.string
+import dev.kordex.core.extensions.ephemeralSlashCommand
+import dev.kordex.core.utils.FilterStrategy
+import dev.kordex.core.utils.suggestStringCollection
+import i18n.Translations
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.joinAll
@@ -27,7 +29,6 @@ import kotlinx.coroutines.launch
 import me.brightspark.mdcbot.util.editSimple
 import me.brightspark.mdcbot.util.respondSimple
 import me.brightspark.mdcbot.util.toSimpleString
-import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
 @Component
@@ -38,14 +39,14 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 		intents(Intent.Guilds)
 
 		ephemeralSlashCommand {
-			name = "forum"
-			description = "Commands for managing forum channels"
+			name = Translations.Command.Forum.name
+			description = Translations.Command.Forum.desc
 			mdcGuild()
 			userRequiresModeratorPermission()
 
 			ephemeralSubCommand(::GetTagsArguments) {
-				name = "get-tags"
-				description = "Gets all tags in the given forum channel"
+				name = Translations.Command.Forum.GetTags.name
+				description = Translations.Command.Forum.GetTags.desc
 
 				action {
 					val forumChannel = arguments.forumChannel.asChannelOf<ForumChannel>()
@@ -56,18 +57,22 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 							tag.emojiId != null && tag.emojiName != null -> "<:${tag.emojiName}:${tag.emojiId}> "
 							tag.emojiId != null ->
 								guild!!.emojis.firstOrNull { it.id == tag.emojiId }?.let { "${it.mention} " } ?: ""
+
 							tag.emojiName != null -> "${tag.emojiName} "
 							else -> ""
 						}
 						sb.append("- ").append(emoji).append(tag.name)
 					}
-					respondSimple("Available tags for ${forumChannel.mention}:\n\n$sb")
+					respondSimple(
+						Translations.Command.Forum.GetTags.Response.success
+							.withOrdinalPlaceholders(forumChannel.mention, sb)
+					)
 				}
 			}
 
 			ephemeralSubCommand(::MigrateTagArguments) {
-				name = "migrate-tag"
-				description = "Creates a new tag to be used in the given forum channel"
+				name = Translations.Command.Forum.MigrateTag.name
+				description = Translations.Command.Forum.MigrateTag.desc
 
 				action {
 					val forumChannel = arguments.forumChannel.asChannelOf<ForumChannel>()
@@ -77,7 +82,10 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 					fun findTag(tagName: String): ForumTag? = forumChannel.availableTags.find { it.name == tagName }
 
 					suspend fun tagNotExists(tagName: String) {
-						respondSimple("The tag `$tagName` could not be found in ${forumChannel.mention}!")
+						respondSimple(
+							Translations.Command.Forum.MigrateTag.Response.notExist
+								.withOrdinalPlaceholders(tagName, forumChannel.mention)
+						)
 					}
 
 					val tagFrom = findTag(tagFromName) ?: return@action tagNotExists(tagFromName)
@@ -85,7 +93,8 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 
 					log.info { "Command forum migrate-tag: Will migrate threads in ${forumChannel.toSimpleString()} with tag ${tagFrom.toSimpleString()} to ${tagTo.toSimpleString()}" }
 					val responseMessage = respondSimple(
-						"Migrating threads in ${forumChannel.mention} from `$tagFromName` to `$tagToName`...",
+						Translations.Command.Forum.MigrateTag.Response.start
+							.withOrdinalPlaceholders(forumChannel.mention, tagFromName, tagToName),
 						DISCORD_YELLOW
 					)
 
@@ -117,7 +126,8 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 						user.asUser()
 					)
 					responseMessage.editSimple(
-						"Finished migrating $numUpdated threads in ${forumChannel.mention} from `$tagFromName` to `$tagToName`!",
+						Translations.Command.Forum.MigrateTag.Response.finished
+							.withOrdinalPlaceholders(numUpdated, forumChannel.mention, tagFromName, tagToName),
 						DISCORD_GREEN
 					)
 				}
@@ -125,17 +135,17 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 		}
 	}
 
-	abstract inner class ForumCommandArguments : Arguments() {
+	abstract class ForumCommandArguments : Arguments() {
 		val forumChannel: Channel by channel {
-			name = "forum-channel"
-			description = "The forum channel"
+			name = Translations.Command.Forum.Arg.Channel.name
+			description = Translations.Command.Forum.Arg.Channel.desc
 			requireChannelType(ChannelType.GuildForum)
 		}
 	}
 
-	inner class GetTagsArguments : ForumCommandArguments()
+	class GetTagsArguments : ForumCommandArguments()
 
-	inner class MigrateTagArguments : ForumCommandArguments() {
+	class MigrateTagArguments : ForumCommandArguments() {
 		private suspend fun AutoCompleteInteraction.tagAutocomplete() {
 			val forumChannelId = command.options["forum-channel"]?.let { (it as ChannelOptionValue).value } ?: return
 			val guild = (channel as GuildChannelBehavior).guild
@@ -145,13 +155,13 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 		}
 
 		val tagFrom: String by string {
-			name = "tag-from"
-			description = "The tag to migrate threads from"
+			name = Translations.Command.Forum.MigrateTag.Arg.TagFrom.name
+			description = Translations.Command.Forum.MigrateTag.Arg.TagFrom.desc
 			autoComplete { tagAutocomplete() }
 		}
 		val tagTo: String by string {
-			name = "tag-to"
-			description = "The tag to migrate threads to"
+			name = Translations.Command.Forum.MigrateTag.Arg.TagTo.name
+			description = Translations.Command.Forum.MigrateTag.Arg.TagTo.desc
 			autoComplete { tagAutocomplete() }
 		}
 	}

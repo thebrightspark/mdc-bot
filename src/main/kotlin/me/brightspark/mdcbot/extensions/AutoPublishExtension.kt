@@ -1,16 +1,17 @@
 package me.brightspark.mdcbot.extensions
 
-import com.kotlindiscord.kord.extensions.checks.isNotBot
-import com.kotlindiscord.kord.extensions.extensions.event
 import dev.kord.common.entity.Permission
 import dev.kord.core.behavior.channel.NewsChannelBehavior
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.gateway.Intent
+import dev.kordex.core.checks.isNotBot
+import dev.kordex.core.extensions.event
+import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.properties.Property
-import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
-@Component
+// TODO: Disabled for now, since the config command for it doesn't work anyways. Plus idk if I want this going forward.
+//@Component
 class AutoPublishExtension : BaseExtension("auto-publish") {
 	private val log = KotlinLogging.logger {}
 

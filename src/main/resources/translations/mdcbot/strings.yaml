@@ -1,0 +1,123 @@
+command:
+  config:
+    name: config
+    desc: Configuration commands
+    list:
+      name: list
+      desc: Lists all current config values
+      response:
+        success: "**Value:** {0}\n**Raw:** {1}"
+    set:
+      desc: Sets {0}
+      select: "Please select an option:"
+      channel-logs:
+        arg:
+          channel:
+            name: log-channel
+            desc: The text channel to send logs to
+      category-dev:
+        arg:
+          category:
+            name: dev-category
+            desc: The category to use for dev channels
+      role-moderator:
+        arg:
+          role:
+            name: moderator-role
+            desc: The moderator role
+      auto-publish:
+        arg:
+          channels:
+            name: auto-publish-channels
+            desc: The channels to automatically publish any messages sent in
+  dev:
+    name: dev
+    desc: Commands for developers to use for creating and managing their personal channels
+    create:
+      name: create
+      desc: Creates a new developer channel for the given server member
+      arg:
+        member:
+          name: user
+          desc: The server member
+        name:
+          name: name
+          desc: The new channel name
+      response:
+        success: New dev channel {0} create, owned by {1}
+        exists: A channel already exists for {0} -> {1}
+        category-not-set: The dev category has not been set!
+        category-not-found: The dev category could not be found!
+    rename:
+      name: rename
+      desc: Renames your dev channel
+      arg:
+        name:
+          name: name
+          desc: The dev channel name
+      response:
+        success: Renamed your channel to `{0}`
+        not-exist: Your dev channel does not exist!
+    invite:
+      name: invite
+      desc: Gets or creates an invite for your dev channel
+      response:
+        success: Invite to {0}:\n`{1}`
+
+  forum:
+    name: forum
+    desc: Commands for managing forum channels
+    arg:
+      channel:
+        name: forum-channel
+        desc: The forum channel
+    get-tags:
+      name: get-tags
+      desc: Gets all tags in the given forum channel
+      response:
+        success: Available tags for {0}:\n\n{1}
+    migrate-tag:
+      name: migrate-tag
+      desc: Creates a new tag to be used in the given forum channel
+      arg:
+        tag-from:
+          name: tag-from
+          desc: The tag to migrate threads from
+        tag-to:
+          name: tag-to
+          desc: The tag to migrate threads to
+      response:
+        start: Migrating threads in {0} from `{1]` to `{2}`...
+        finished: Finished migrating {0} threads in {1} from `{2]` to `{3}`!
+        not-exist: The tag `{0}` could not be found in {1}!
+
+user-command:
+  dev:
+    name: Create dev channel
+
+check:
+  fail:
+    dev:
+      none: You do not own a dev channel!
+
+error:
+  bot:
+    permission: Missing permission{0, plural, one {} other {s}} {1}!
+
+property:
+  channel-logs:
+    name: log
+    long-name: Log channel
+    desc: the log channel for the bot
+  category-dev:
+    name: category
+    long-name: Dev category
+    desc: the developer category, where all developer channels will be created under
+  role-moderator:
+    name: moderator-role
+    long-name: Server moderator role
+    desc: the server moderator role
+  auto-publish-channels:
+    name: auto-publish-channels
+    long-name: Auto publish channels
+    desc: the channels to automatically publish all messages that are posted in

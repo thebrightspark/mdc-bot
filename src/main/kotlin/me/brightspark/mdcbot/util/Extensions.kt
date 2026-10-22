@@ -1,9 +1,5 @@
 package me.brightspark.mdcbot.util
 
-import com.kotlindiscord.kord.extensions.DISCORD_BLACK
-import com.kotlindiscord.kord.extensions.types.EphemeralInteractionContext
-import com.kotlindiscord.kord.extensions.types.PublicInteractionContext
-import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.Color
 import dev.kord.common.entity.ForumTag
 import dev.kord.common.entity.Snowflake
@@ -15,8 +11,12 @@ import dev.kord.core.entity.channel.Category
 import dev.kord.core.entity.channel.Channel
 import dev.kord.core.entity.interaction.followup.EphemeralFollowupMessage
 import dev.kord.core.entity.interaction.followup.PublicFollowupMessage
-import dev.kord.rest.builder.message.create.embed
-import dev.kord.rest.builder.message.modify.embed
+import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.embed
+import dev.kordex.core.DISCORD_BLACK
+import dev.kordex.core.types.EphemeralInteractionContext
+import dev.kordex.core.types.PublicInteractionContext
+import dev.kordex.i18n.Key
 import java.util.*
 
 fun <T> Optional<T>.ifPresentOrElse(presentConsumer: (T) -> Unit, elseRunnable: () -> Unit): Unit =
@@ -34,14 +34,29 @@ suspend fun Kord.getCategory(id: Snowflake): Category? =
 	this.getChannel(id)?.takeIf { it is Category }?.let { it as Category }
 
 suspend fun EphemeralInteractionContext.respondSimple(
+	message: Key,
+	color: Color = DISCORD_BLACK
+): EphemeralFollowupMessage = respondSimple(message.translate(), color)
+
+suspend fun EphemeralInteractionContext.respondSimple(
 	message: String,
 	color: Color = DISCORD_BLACK
+): EphemeralFollowupMessage = respondEmbed(color) { description = message }
+
+suspend fun EphemeralInteractionContext.respondEmbed(
+	color: Color = DISCORD_BLACK,
+	block: suspend EmbedBuilder.() -> Unit
 ): EphemeralFollowupMessage = respond {
 	embed {
 		this.color = color
-		description = message
+		block()
 	}
 }
+
+suspend fun PublicInteractionContext.respondSimple(
+	message: Key,
+	color: Color = DISCORD_BLACK
+): PublicFollowupMessage = respondSimple(message.translate(), color)
 
 suspend fun PublicInteractionContext.respondSimple(
 	message: String,
@@ -52,6 +67,11 @@ suspend fun PublicInteractionContext.respondSimple(
 		description = message
 	}
 }
+
+suspend fun EphemeralFollowupMessage.editSimple(
+	message: Key,
+	color: Color = DISCORD_BLACK
+): EphemeralFollowupMessage = editSimple(message.translate(), color)
 
 suspend fun EphemeralFollowupMessage.editSimple(
 	message: String,

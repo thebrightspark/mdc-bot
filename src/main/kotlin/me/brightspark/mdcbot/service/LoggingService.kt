@@ -1,17 +1,17 @@
 package me.brightspark.mdcbot.service
 
-import com.kotlindiscord.kord.extensions.utils.getKoin
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.GuildMessageChannel
+import dev.kordex.core.utils.getKoin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.util.toSimpleString
 import org.springframework.stereotype.Service
+import kotlin.time.Clock
 
 @Service
 class LoggingService(

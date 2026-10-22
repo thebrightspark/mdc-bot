@@ -1,13 +1,5 @@
 package me.brightspark.mdcbot.extensions
 
-import com.kotlindiscord.kord.extensions.checks.guildFor
-import com.kotlindiscord.kord.extensions.checks.types.CheckContext
-import com.kotlindiscord.kord.extensions.checks.types.CheckContextWithCache
-import com.kotlindiscord.kord.extensions.commands.application.ApplicationCommand
-import com.kotlindiscord.kord.extensions.events.EventHandler
-import com.kotlindiscord.kord.extensions.extensions.Extension
-import com.kotlindiscord.kord.extensions.utils.hasPermission
-import com.kotlindiscord.kord.extensions.utils.hasPermissions
 import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.ChannelBehavior
@@ -16,8 +8,16 @@ import dev.kord.core.entity.Member
 import dev.kord.core.entity.channel.CategorizableChannel
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.core.event.Event
-import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
 import dev.kord.gateway.Intent
+import dev.kordex.core.checks.guildFor
+import dev.kordex.core.checks.types.CheckContext
+import dev.kordex.core.checks.types.CheckContextWithCache
+import dev.kordex.core.commands.application.ApplicationCommand
+import dev.kordex.core.events.EventHandler
+import dev.kordex.core.extensions.Extension
+import dev.kordex.core.utils.hasPermissions
+import dev.kordex.i18n.Key
+import i18n.Translations
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.service.LoggingService
 import me.brightspark.mdcbot.service.PropertyService
@@ -66,7 +66,7 @@ abstract class BaseExtension(override val name: String) : Extension() {
 		propertyService.get(Property.ROLE_MODERATOR).let { this.roleIds.contains(it) }
 
 	protected fun <T : Event> EventHandler<T>.checkIf(
-		message: String? = null,
+		message: Key? = null,
 		callback: suspend CheckContextWithCache<T>.() -> Boolean
 	) {
 		this.check { failIfNot(message) { callback() } }
@@ -76,7 +76,7 @@ abstract class BaseExtension(override val name: String) : Extension() {
 	 * Fail if the bot does not have the permissions
 	 */
 	protected suspend fun CheckContext<*>.botHasPermissions(vararg permissions: Permission) {
-		failIfNot("Missing permission${if (permissions.size != 1) "s" else ""} ${permissions.joinToString()}!") {
+		failIfNot(Translations.Error.Bot.permission.withOrdinalPlaceholders(permissions.size, permissions.joinToString())) {
 			guildFor(event)?.getMemberOrNull(kord.selfId)?.hasPermissions(*permissions) ?: false
 		}
 	}

@@ -1,16 +1,5 @@
 package me.brightspark.mdcbot.extensions
 
-import com.kotlindiscord.kord.extensions.checks.types.CheckContext
-import com.kotlindiscord.kord.extensions.commands.Arguments
-import com.kotlindiscord.kord.extensions.commands.application.slash.publicSubCommand
-import com.kotlindiscord.kord.extensions.commands.converters.impl.optionalMember
-import com.kotlindiscord.kord.extensions.commands.converters.impl.optionalString
-import com.kotlindiscord.kord.extensions.commands.converters.impl.string
-import com.kotlindiscord.kord.extensions.extensions.event
-import com.kotlindiscord.kord.extensions.extensions.publicSlashCommand
-import com.kotlindiscord.kord.extensions.extensions.publicUserCommand
-import com.kotlindiscord.kord.extensions.types.PublicInteractionContext
-import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.entity.*
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.channel.createInvite
@@ -24,14 +13,24 @@ import dev.kord.core.event.channel.CategoryDeleteEvent
 import dev.kord.core.event.channel.TextChannelDeleteEvent
 import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
 import dev.kord.gateway.Intent
-import dev.kord.rest.builder.message.create.embed
+import dev.kordex.core.checks.types.CheckContext
+import dev.kordex.core.commands.Arguments
+import dev.kordex.core.commands.application.slash.publicSubCommand
+import dev.kordex.core.commands.converters.impl.optionalMember
+import dev.kordex.core.commands.converters.impl.optionalString
+import dev.kordex.core.commands.converters.impl.string
+import dev.kordex.core.extensions.event
+import dev.kordex.core.extensions.publicSlashCommand
+import dev.kordex.core.extensions.publicUserCommand
+import dev.kordex.core.types.PublicInteractionContext
+import i18n.Translations
+import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.database.model.DevChannel
 import me.brightspark.mdcbot.database.service.DevChannelService
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.util.getCategory
 import me.brightspark.mdcbot.util.respondSimple
 import me.brightspark.mdcbot.util.toSimpleString
-import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import kotlin.time.Duration
 
@@ -65,13 +64,13 @@ class DevChannelExtension(
 		}
 
 		publicSlashCommand {
-			name = "dev"
-			description = "Commands for developers to use for creating and managing their personal channels"
+			name = Translations.Command.Dev.name
+			description = Translations.Command.Dev.desc
 			mdcGuild()
 
 			publicSubCommand(::CreateDevChannelArguments) {
-				name = "create"
-				description = "Creates a new developer channel for the given server member"
+				name = Translations.Command.Dev.Create.name
+				description = Translations.Command.Dev.Create.desc
 				requireBotPermissions(Permission.ManageChannels)
 				userRequiresModeratorPermission() // TODO: Later allow this to be used by devs
 
@@ -90,8 +89,8 @@ class DevChannelExtension(
 			}
 
 			publicSubCommand(::RenameArguments) {
-				name = "rename"
-				description = "Renames your dev channel"
+				name = Translations.Command.Dev.Rename.name
+				description = Translations.Command.Dev.Rename.desc
 				check { ownsADevChannel() }
 
 				action {
@@ -103,7 +102,7 @@ class DevChannelExtension(
 						?: run {
 							// Channel does not exist!
 							devChannelService.remove(devChannel)
-							respondSimple("Your dev channel does not exist!")
+							respondSimple(Translations.Command.Dev.Rename.Response.notExist)
 							return@action
 						}
 
@@ -114,14 +113,14 @@ class DevChannelExtension(
 					}.name
 
 					loggingService.log("Renamed channel $channelId from `$oldName` to `$newName`", user)
-					respondSimple("Renamed your channel to `$newName`")
+					respondSimple(Translations.Command.Dev.Rename.Response.success.withOrdinalPlaceholders(newName))
 					log.info { "Command dev rename: ${user.toSimpleString()} renamed channel $channelId from '$oldName' to '$newName'" }
 				}
 			}
 
 			publicSubCommand {
-				name = "invite"
-				description = "Gets or creates an invite for your dev channel"
+				name = Translations.Command.Dev.Invite.name
+				description = Translations.Command.Dev.Invite.desc
 				check { ownsADevChannel() }
 
 				action {
@@ -146,15 +145,16 @@ class DevChannelExtension(
 						}
 					}
 
-					respond {
-						embed { description = "Invite to ${channel.mention}:\n`https://discord.gg/${invite.code}`" }
-					}
+					respondSimple(
+						Translations.Command.Dev.Invite.Response.success
+							.withOrdinalPlaceholders(channel.mention, "https://discord.gg/${invite.code}")
+					)
 				}
 			}
 		}
 
 		publicUserCommand {
-			name = "Create dev channel"
+			name = Translations.UserCommand.Dev.name
 			mdcGuild()
 			userRequiresModeratorPermission()
 
@@ -174,9 +174,10 @@ class DevChannelExtension(
 		devChannelService.getByUserId(member.id.value.toLong())?.let { devChannel ->
 			kord.getChannel(Snowflake(devChannel.channelId))?.let { channel ->
 				// Channel already exists!
-				respond {
-					embed { description = "A channel already exists for ${member.mention} -> ${channel.mention}" }
-				}
+				respondSimple(
+					Translations.Command.Dev.Create.Response.exists
+						.withOrdinalPlaceholders(member.mention, channel.mention)
+				)
 				return
 			} ?: run {
 				// Channel stored doesn't exist!
@@ -186,12 +187,12 @@ class DevChannelExtension(
 		}
 
 		val categoryId = propertyService.get(Property.CATEGORY_DEV) ?: run {
-			respondSimple("The dev category has not been set!")
+			respondSimple(Translations.Command.Dev.Create.Response.categoryNotSet)
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
 		}
 		val category = kord.getCategory(categoryId) ?: run {
-			respondSimple("The dev category could not be found!")
+			respondSimple(Translations.Command.Dev.Create.Response.categoryNotFound)
 			log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
 			return
 		}
@@ -215,31 +216,33 @@ class DevChannelExtension(
 		)
 
 		loggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}", creator)
-		respondSimple("New dev channel ${channel.mention} created, owned by ${member.mention}")
+		respondSimple(
+			Translations.Command.Dev.Create.Response.success.withOrdinalPlaceholders(channel.mention, member.mention)
+		)
 		log.info { "Command createDevChannel: ${creator.toSimpleString()} created new dev channel ${channel.toSimpleString()} for member ${member.toSimpleString()}" }
 	}
 
 	private suspend fun CheckContext<ApplicationCommandInteractionCreateEvent>.ownsADevChannel() {
-		failIfNot("You do not own a dev channel!") {
+		failIfNot(Translations.Check.Fail.Dev.none) {
 			return@failIfNot devChannelService.getByUserId(event.interaction.user.id.value.toLong())?.channelId != null
 		}
 	}
 
-	inner class CreateDevChannelArguments : Arguments() {
+	class CreateDevChannelArguments : Arguments() {
 		val member: Member? by optionalMember {
-			name = "user"
-			description = "The server member"
+			name = Translations.Command.Dev.Create.Arg.Member.name
+			description = Translations.Command.Dev.Create.Arg.Member.desc
 		}
 		val name: String? by optionalString {
-			name = "name"
-			description = "The new channel name"
+			name = Translations.Command.Dev.Create.Arg.Name.name
+			description = Translations.Command.Dev.Create.Arg.Name.desc
 		}
 	}
 
-	inner class RenameArguments : Arguments() {
+	class RenameArguments : Arguments() {
 		val name: String by string {
-			name = "name"
-			description = "The dev channel name"
+			name = Translations.Command.Dev.Rename.Arg.Name.name
+			description = Translations.Command.Dev.Rename.Arg.Name.desc
 		}
 	}
 }

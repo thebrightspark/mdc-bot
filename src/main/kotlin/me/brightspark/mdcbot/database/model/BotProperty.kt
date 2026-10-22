@@ -10,6 +10,6 @@ import jakarta.persistence.Table
 data class BotProperty(
 	@Id
 	val name: String,
-	@Column(nullable = true)
+	@Column(name = "prop_value", nullable = true)
 	var value: String?
 )
