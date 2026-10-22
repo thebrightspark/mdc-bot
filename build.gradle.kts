@@ -49,7 +49,7 @@ dependencies {
     implementation("org.hibernate.orm:hibernate-community-dialects")
 
     // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
-    implementation("com.github.ben-manes.caffeine:caffeine:3.2.4")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.3.1")
     // https://mvnrepository.com/artifact/io.github.oshai/kotlin-logging-jvm
     // Removed for now, as Kord includes a version already
 //    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
