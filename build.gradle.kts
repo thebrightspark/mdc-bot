@@ -3,7 +3,7 @@ import dev.kordex.i18n.files.YamlFormat
 
 plugins {
 	// https://github.com/jetbrains/kotlin/releases
-	var kotlinVersion = "2.4.10"
+	var kotlinVersion = "2.4.21"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
     kotlin("plugin.jpa") version kotlinVersion
