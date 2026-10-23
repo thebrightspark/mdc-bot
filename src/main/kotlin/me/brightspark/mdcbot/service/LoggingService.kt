@@ -6,26 +6,21 @@ import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.entity.User
 import dev.kord.core.entity.channel.GuildMessageChannel
 import dev.kordex.core.utils.getKoin
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import me.brightspark.mdcbot.COROUTINE_SCOPE
+import me.brightspark.mdcbot.Config
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.util.toSimpleString
-import org.springframework.stereotype.Service
 import kotlin.time.Clock
 
-@Service
-class LoggingService(
-	private val coroutineScope: CoroutineScope,
-	private val mdcGuildId: Snowflake,
-	private val propertyService: PropertyService
-) {
+object LoggingService {
 	private val logChannel: Snowflake?
-		get() = propertyService.get(Property.CHANNEL_LOGS)
+		get() = PropertyService.get(Property.CHANNEL_LOGS)
 
 	fun log(message: String, user: User? = null) {
 		logChannel?.let { logChannelId ->
-			coroutineScope.launch {
-				getKoin().get<Kord>().getGuildOrNull(mdcGuildId)?.getChannel(logChannelId)
+			COROUTINE_SCOPE.launch {
+				getKoin().get<Kord>().getGuildOrNull(Config.guildId)?.getChannel(logChannelId)
 					?.takeIf { it is GuildMessageChannel }
 					?.let {
 						(it as GuildMessageChannel).createEmbed {

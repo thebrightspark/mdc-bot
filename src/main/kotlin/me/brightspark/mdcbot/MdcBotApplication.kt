@@ -1,43 +1,31 @@
 package me.brightspark.mdcbot
 
-import dev.kord.common.entity.Snowflake
 import dev.kordex.core.ExtensibleBot
 import dev.kordex.core.checks.inGuild
-import dev.kordex.core.extensions.Extension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
-import org.springframework.context.annotation.Bean
-import kotlin.concurrent.thread
+import me.brightspark.mdcbot.database.DbConnection
+import me.brightspark.mdcbot.extensions.ConfigurationExtension
+import me.brightspark.mdcbot.extensions.DevChannelExtension
+import me.brightspark.mdcbot.extensions.ForumHelperExtension
 
-@SpringBootApplication
-class MdcBotApplication {
-	@Bean
-	fun coroutineScope(): CoroutineScope = CoroutineScope(Dispatchers.Default)
+val COROUTINE_SCOPE = CoroutineScope(Dispatchers.Default)
+val IO_SCOPE = CoroutineScope(Dispatchers.IO)
 
-	@Bean
-	fun mdcGuildId(@Value($$"${bot.guild}") guildId: Long): Snowflake = Snowflake(guildId)
+suspend fun main() {
+	Config.read()
+	DbConnection.connect()
 
-	@Bean
-	fun bot(
-		@Value($$"${bot.token}") token: String,
-		extensions: Collection<Extension>,
-		mdcGuildId: Snowflake
-	): ExtensibleBot = runBlocking {
-		ExtensibleBot(token) {
-			intents(addDefaultIntents = false, addExtensionIntents = true) {}
-			applicationCommands {
-				slashCommandCheck { inGuild(mdcGuildId) }
-				defaultGuild(mdcGuildId) // Just in-case I miss any
-			}
-			extensions.forEach { extensionsBuilder.add { it } }
-		}.apply { thread { runBlocking { start() } } }
-	}
-}
-
-fun main(args: Array<String>) {
-	runApplication<MdcBotApplication>(*args)
+	ExtensibleBot(Config.token) {
+		intents(addDefaultIntents = false, addExtensionIntents = true) {}
+		applicationCommands {
+			slashCommandCheck { inGuild(Config.guildId) }
+			defaultScope.limitToGuild(Config.guildId) // Just in-case I miss any
+		}
+		extensions {
+			add(::ConfigurationExtension)
+			add(::DevChannelExtension)
+			add(::ForumHelperExtension)
+		}
+	}.start()
 }

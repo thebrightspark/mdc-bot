@@ -7,11 +7,7 @@ import dev.kord.gateway.Intent
 import dev.kordex.core.checks.isNotBot
 import dev.kordex.core.extensions.event
 import io.github.oshai.kotlinlogging.KotlinLogging
-import me.brightspark.mdcbot.properties.Property
-import org.springframework.stereotype.Component
 
-// TODO: Disabled for now, since the config command for it doesn't work anyways. Plus idk if I want this going forward.
-//@Component
 class AutoPublishExtension : BaseExtension("auto-publish") {
 	private val log = KotlinLogging.logger {}
 
@@ -22,7 +18,7 @@ class AutoPublishExtension : BaseExtension("auto-publish") {
 			check { isNotBot() }
 			check { botHasPermissions(Permission.ManageChannels) }
 			checkIf { event.message.channel is NewsChannelBehavior }
-			checkIf { propContainsChannelOrParentCategory(Property.AUTO_PUBLISH_CHANNELS, event.message.channel) }
+//			checkIf { propContainsChannelOrParentCategory(Property.AUTO_PUBLISH_CHANNELS, event.message.channel) }
 			action {
 				val message = event.message
 				log.info { "Auto-publishing message ${message.id} in channel ${message.channel.id}" }

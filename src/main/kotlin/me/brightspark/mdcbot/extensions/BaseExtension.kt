@@ -18,20 +18,13 @@ import dev.kordex.core.extensions.Extension
 import dev.kordex.core.utils.hasPermissions
 import dev.kordex.i18n.Key
 import i18n.Translations
+import me.brightspark.mdcbot.Config
 import me.brightspark.mdcbot.properties.Property
-import me.brightspark.mdcbot.service.LoggingService
 import me.brightspark.mdcbot.service.PropertyService
-import org.springframework.beans.factory.annotation.Autowired
 
 abstract class BaseExtension(override val name: String) : Extension() {
-	@Autowired
-	protected lateinit var mdcGuildId: Snowflake
-
-	@Autowired
-	protected lateinit var loggingService: LoggingService
-
-	@Autowired
-	protected lateinit var propertyService: PropertyService
+	protected val mdcGuildId: Snowflake
+		get() = Config.guildId
 
 	/**
 	 * Sets all the given intents to this extension
@@ -43,7 +36,7 @@ abstract class BaseExtension(override val name: String) : Extension() {
 	/**
 	 * Locks the [ApplicationCommand] to the MDC guild
 	 */
-	protected fun ApplicationCommand<*>.mdcGuild(): Unit = guild(mdcGuildId)
+	protected fun ApplicationCommand<*>.mdcGuild(): Unit = scope.limitToGuild(mdcGuildId)
 
 	/**
 	 * Sets the default required permission for this command to be [Permission.Administrator]
@@ -63,7 +56,7 @@ abstract class BaseExtension(override val name: String) : Extension() {
 	protected suspend fun Interaction.getMember(): Member = user.asMember(data.guildId.value!!)
 
 	protected fun Member.isModerator(): Boolean =
-		propertyService.get(Property.ROLE_MODERATOR).let { this.roleIds.contains(it) }
+		PropertyService.get(Property.ROLE_MODERATOR).let { this.roleIds.contains(it) }
 
 	protected fun <T : Event> EventHandler<T>.checkIf(
 		message: Key? = null,
@@ -76,7 +69,12 @@ abstract class BaseExtension(override val name: String) : Extension() {
 	 * Fail if the bot does not have the permissions
 	 */
 	protected suspend fun CheckContext<*>.botHasPermissions(vararg permissions: Permission) {
-		failIfNot(Translations.Error.Bot.permission.withOrdinalPlaceholders(permissions.size, permissions.joinToString())) {
+		failIfNot(
+			Translations.Error.Bot.permission.withOrdinalPlaceholders(
+				permissions.size,
+				permissions.joinToString()
+			)
+		) {
 			guildFor(event)?.getMemberOrNull(kord.selfId)?.hasPermissions(*permissions) ?: false
 		}
 	}
@@ -86,7 +84,7 @@ abstract class BaseExtension(override val name: String) : Extension() {
 		channel: ChannelBehavior
 	): Boolean {
 		val channelId = channel.id
-		val propChannels = propertyService.get(property)
+		val propChannels = PropertyService.get(property)
 		fun propHasId(id: Snowflake): Boolean = propChannels?.any { id == it } == true
 
 		return propHasId(channelId) ||

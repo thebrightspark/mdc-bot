@@ -1,0 +1,27 @@
+[versions]
+kotlin = "2.3.10" # https://github.com/JetBrains/kotlin/releases
+kotlin-coroutines = "1.11.0" # https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm
+logback = "1.6.5" # https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+caffeine = "3.2.4" # https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
+exposed = "1.6.0" # https://github.com/JetBrains/Exposed/releases
+sqlite = "3.50.2.0"
+sparkconfig = "1.2.0"
+
+kordex-plugin = "1.9.2" # https://docs.kordex.dev/bots/gradle-plugin/
+kordex-i18n-plugin = "1.1.1" # https://docs.kordex.dev/i18n/getting-started
+
+[libraries]
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
+kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlin-coroutines" }
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
+sparkconfig = { module = "brightspark:sparkconfig", version.ref = "sparkconfig" }
+
+[plugins]
+kordex = { id = "dev.kordex.gradle.kordex", version.ref = "kordex-plugin" }
+kordex-i18n = { id = "dev.kordex.gradle.i18n", version.ref = "kordex-i18n-plugin" }

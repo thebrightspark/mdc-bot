@@ -1,60 +1,51 @@
 package me.brightspark.mdcbot.database.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import me.brightspark.mdcbot.database.model.DevChannel
-import me.brightspark.mdcbot.database.repository.DevChannelRepo
-import org.springframework.cache.annotation.CacheEvict
-import org.springframework.cache.annotation.CachePut
-import org.springframework.cache.annotation.Cacheable
-import org.springframework.cache.annotation.Caching
-import org.springframework.data.repository.findByIdOrNull
-import org.springframework.stereotype.Service
+import me.brightspark.mdcbot.database.table.DevChannelEntity
+import me.brightspark.mdcbot.database.table.DevChannelTable
+import me.brightspark.mdcbot.database.updateOrCreate
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.deleteAll
+import org.jetbrains.exposed.v1.jdbc.deleteIgnoreWhere
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-@Service
-class DevChannelService(
-	private val devChannelRepo: DevChannelRepo
-) {
-	companion object {
-		private const val CACHE_BY_CHANNEL = "devChannels_byChannel"
-		private const val CACHE_BY_USER = "devChannels_byUser"
-	}
-
+object DevChannelService {
 	private val log = KotlinLogging.logger {}
 
-	@Cacheable(CACHE_BY_CHANNEL)
-	fun getByChannelId(channelId: Long): DevChannel? = devChannelRepo.findByIdOrNull(channelId)
-
-	@Cacheable(CACHE_BY_USER)
-	fun getByUserId(userId: Long): DevChannel? = devChannelRepo.findByUserId(userId)
-
-	@Caching(
-		put = [
-			CachePut(cacheNames = [CACHE_BY_CHANNEL], key = "#devChannel.channelId"),
-			CachePut(cacheNames = [CACHE_BY_USER], key = "#devChannel.userId")
-		]
-	)
-	fun save(devChannel: DevChannel): DevChannel = devChannelRepo.save(devChannel)
-
-	@Caching(
-		evict = [
-			CacheEvict(cacheNames = [CACHE_BY_CHANNEL], key = "#devChannel.channelId"),
-			CacheEvict(cacheNames = [CACHE_BY_USER], key = "#devChannel.userId")
-		]
-	)
-	fun remove(devChannel: DevChannel) {
-		devChannelRepo.delete(devChannel)
-		log.info { "remove: Removed entry $devChannel" }
+	fun create(channelId: ULong, userId: ULong, botMessageId: ULong): Unit = transaction {
+		DevChannelEntity.new(channelId) {
+			this.userId = userId
+			this.botMessageId = botMessageId
+		}
 	}
 
-	@Caching(
-		evict = [
-			CacheEvict(cacheNames = [CACHE_BY_CHANNEL], allEntries = true),
-			CacheEvict(cacheNames = [CACHE_BY_USER], allEntries = true)
-		]
-	)
+	fun exists(channelId: ULong): Boolean = transaction {
+		DevChannelTable.select(DevChannelTable.id)
+			.where { DevChannelTable.id eq channelId }
+			.limit(1)
+			.count() > 0
+	}
+
+	fun getByChannelId(channelId: ULong): DevChannelEntity? = transaction {
+		DevChannelEntity.findById(channelId)
+	}
+
+	fun getByUserId(userId: ULong): DevChannelEntity? = transaction {
+		DevChannelEntity.find { DevChannelTable.userId eq userId }.limit(1).firstOrNull()
+	}
+
+	fun setInvite(channelId: ULong, inviteCode: String): Unit = transaction {
+		updateOrCreate(DevChannelEntity, channelId) { it.inviteCode = inviteCode }
+	}
+
+	fun remove(channelId: ULong) {
+		transaction { DevChannelTable.deleteIgnoreWhere { DevChannelTable.id eq channelId } }
+		log.info { "remove: Removed entry $channelId" }
+	}
+
 	fun removeAll() {
-		val count = devChannelRepo.count()
-		devChannelRepo.deleteAll()
+		val count = transaction { DevChannelTable.deleteAll() }
 		log.info { "removeAll: Removed all $count entries" }
 	}
 }

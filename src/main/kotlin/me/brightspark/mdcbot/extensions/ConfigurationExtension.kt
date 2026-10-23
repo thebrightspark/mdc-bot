@@ -14,11 +14,11 @@ import dev.kordex.core.types.EphemeralInteractionContext
 import i18n.Translations
 import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.properties.Property
+import me.brightspark.mdcbot.service.LoggingService
+import me.brightspark.mdcbot.service.PropertyService
 import me.brightspark.mdcbot.util.respondEmbed
 import me.brightspark.mdcbot.util.respondSimple
-import org.springframework.stereotype.Component
 
-@Component
 class ConfigurationExtension : BaseExtension("configuration") {
 	private val log = KotlinLogging.logger {}
 
@@ -37,7 +37,7 @@ class ConfigurationExtension : BaseExtension("configuration") {
 					respondEmbed {
 						Property.ALL.forEach { prop ->
 							field(prop.nameTranslated, true) {
-								val rawValue = propertyService.getRaw(prop)
+								val rawValue = PropertyService.getRaw(prop)
 								val value = prop.deserialiseToDisplayString(guild!!, rawValue)
 								Translations.Command.Config.List.Response.success.translate(value, rawValue)
 							}
@@ -113,9 +113,9 @@ class ConfigurationExtension : BaseExtension("configuration") {
 		value: T,
 		property: Property<T>
 	) {
-		propertyService.set(property, value)
+		PropertyService.set(property, value)
 		val selectedReadable = property.deserialiseToDisplayString(guild, value?.toString())
-		loggingService.log(
+		LoggingService.log(
 			"${property.longNameTranslated} has been set to $selectedReadable (Raw: $value)",
 			user.asUser()
 		)

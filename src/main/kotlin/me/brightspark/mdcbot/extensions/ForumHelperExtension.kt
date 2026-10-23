@@ -26,12 +26,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import me.brightspark.mdcbot.service.LoggingService
 import me.brightspark.mdcbot.util.editSimple
 import me.brightspark.mdcbot.util.respondSimple
 import me.brightspark.mdcbot.util.toSimpleString
-import org.springframework.stereotype.Component
 
-@Component
 class ForumHelperExtension : BaseExtension("forum-helper") {
 	private val log = KotlinLogging.logger {}
 
@@ -121,7 +120,7 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 					migrateThreads(forumChannel.getPublicArchivedThreads()).also { numUpdated += it.size }.joinAll()
 					log.info { "Command forum migrate-tag: Finished migrating $numUpdated threads" }
 
-					loggingService.log(
+					LoggingService.log(
 						"Migrated $numUpdated threads in ${forumChannel.mention} from `$tagFromName` to `$tagToName`",
 						user.asUser()
 					)

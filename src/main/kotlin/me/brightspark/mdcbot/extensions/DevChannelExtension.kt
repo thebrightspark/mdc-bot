@@ -25,40 +25,37 @@ import dev.kordex.core.extensions.publicUserCommand
 import dev.kordex.core.types.PublicInteractionContext
 import i18n.Translations
 import io.github.oshai.kotlinlogging.KotlinLogging
-import me.brightspark.mdcbot.database.model.DevChannel
 import me.brightspark.mdcbot.database.service.DevChannelService
 import me.brightspark.mdcbot.properties.Property
+import me.brightspark.mdcbot.service.LoggingService
+import me.brightspark.mdcbot.service.PropertyService
 import me.brightspark.mdcbot.util.getCategory
 import me.brightspark.mdcbot.util.respondSimple
 import me.brightspark.mdcbot.util.toSimpleString
-import org.springframework.stereotype.Component
 import kotlin.time.Duration
 
-@Component
-class DevChannelExtension(
-	private val devChannelService: DevChannelService
-) : BaseExtension("dev-channel") {
+class DevChannelExtension : BaseExtension("dev-channel") {
 	private val log = KotlinLogging.logger {}
 
 	override suspend fun setup() {
 		intents(Intent.Guilds)
 
 		event<CategoryDeleteEvent> {
-			checkIf { propertyService.get(Property.CATEGORY_DEV).let { event.channel.id == it } }
+			checkIf { PropertyService.get(Property.CATEGORY_DEV).let { event.channel.id == it } }
 			action {
-				loggingService.log("Dev category ${event.channel.toSimpleString()} was deleted")
+				LoggingService.log("Dev category ${event.channel.toSimpleString()} was deleted")
 				log.info { "Dev category ${event.channel.toSimpleString()} deleted - removing all data" }
-				devChannelService.removeAll()
+				DevChannelService.removeAll()
 			}
 		}
 
 		event<TextChannelDeleteEvent> {
 			action {
 				val channel = event.channel
-				devChannelService.getByChannelId(channel.id.value.toLong())?.let {
-					loggingService.log("Dev channel ${channel.toSimpleString()} was deleted")
+				DevChannelService.getByChannelId(channel.id.value)?.let {
+					LoggingService.log("Dev channel ${channel.toSimpleString()} was deleted")
 					log.info { "Dev channel ${channel.toSimpleString()} deleted - removing data" }
-					devChannelService.remove(it)
+					DevChannelService.remove(it.id.value)
 				}
 			}
 		}
@@ -95,13 +92,13 @@ class DevChannelExtension(
 
 				action {
 					val user = event.interaction.user.asUser()
-					val devChannel = devChannelService.getByUserId(user.id.value.toLong())!!
-					val channelId = devChannel.channelId
+					val devChannel = DevChannelService.getByUserId(user.id.value)!!
+					val channelId = devChannel.id.value
 					val channel = event.interaction.kord.getChannel(Snowflake(channelId))
 						?.takeIf { it is TextChannel }?.let { it as TextChannel }
 						?: run {
 							// Channel does not exist!
-							devChannelService.remove(devChannel)
+							DevChannelService.remove(channelId)
 							respondSimple(Translations.Command.Dev.Rename.Response.notExist)
 							return@action
 						}
@@ -112,7 +109,7 @@ class DevChannelExtension(
 						reason = "Renamed by ${user.toSimpleString()}"
 					}.name
 
-					loggingService.log("Renamed channel $channelId from `$oldName` to `$newName`", user)
+					LoggingService.log("Renamed channel $channelId from `$oldName` to `$newName`", user)
 					respondSimple(Translations.Command.Dev.Rename.Response.success.withOrdinalPlaceholders(newName))
 					log.info { "Command dev rename: ${user.toSimpleString()} renamed channel $channelId from '$oldName' to '$newName'" }
 				}
@@ -125,9 +122,9 @@ class DevChannelExtension(
 
 				action {
 					val user = event.interaction.user.asUser()
-					val devChannel = devChannelService.getByUserId(user.id.value.toLong())!!
+					val devChannel = DevChannelService.getByUserId(user.id.value)!!
 					val kord = event.kord
-					val channel = kord.getChannel(Snowflake(devChannel.channelId))!! as TextChannel
+					val channel = kord.getChannel(Snowflake(devChannel.id.value))!! as TextChannel
 					val invite: Invite = devChannel.inviteCode?.let { inviteCode ->
 						kord.getGuildOrNull(mdcGuildId)!!.getInviteOrNull(inviteCode, false)
 					} ?: run {
@@ -135,9 +132,8 @@ class DevChannelExtension(
 							maxAge = Duration.ZERO // No expiration
 							reason = "Invite for dev channel ${channel.toSimpleString()}"
 						}.also {
-							devChannel.inviteCode = it.code
-							devChannelService.save(devChannel)
-							loggingService.log(
+							DevChannelService.setInvite(devChannel.id.value, it.code)
+							LoggingService.log(
 								"Created new invite '${it.code}' for dev channel ${channel.toSimpleString()}",
 								user
 							)
@@ -171,8 +167,9 @@ class DevChannelExtension(
 		creator: User
 	) {
 		// Check if the member already owns a channel
-		devChannelService.getByUserId(member.id.value.toLong())?.let { devChannel ->
-			kord.getChannel(Snowflake(devChannel.channelId))?.let { channel ->
+		DevChannelService.getByUserId(member.id.value)?.let { devChannel ->
+			val devChannelId = devChannel.id.value
+			kord.getChannel(Snowflake(devChannelId))?.let { channel ->
 				// Channel already exists!
 				respondSimple(
 					Translations.Command.Dev.Create.Response.exists
@@ -181,12 +178,12 @@ class DevChannelExtension(
 				return
 			} ?: run {
 				// Channel stored doesn't exist!
-				log.warn { "Command createDevChannel: DevChannel for member ${member.id} has invalid channel ${devChannel.channelId}... removing existing data" }
-				devChannelService.remove(devChannel)
+				log.warn { "Command createDevChannel: DevChannel for member ${member.id} has invalid channel ${devChannelId}... removing existing data" }
+				DevChannelService.remove(devChannelId)
 			}
 		}
 
-		val categoryId = propertyService.get(Property.CATEGORY_DEV) ?: run {
+		val categoryId = PropertyService.get(Property.CATEGORY_DEV) ?: run {
 			respondSimple(Translations.Command.Dev.Create.Response.categoryNotSet)
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
@@ -211,11 +208,9 @@ class DevChannelExtension(
 		val botMessage = channel.createEmbed { description = "**Owner:** ${member.mention}" }
 			.apply { pin("Dev channel bot message") }
 
-		devChannelService.save(
-			DevChannel(channel.id.value.toLong(), member.id.value.toLong(), botMessage.id.value.toLong())
-		)
+		DevChannelService.create(channel.id.value, member.id.value, botMessage.id.value)
 
-		loggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}", creator)
+		LoggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}", creator)
 		respondSimple(
 			Translations.Command.Dev.Create.Response.success.withOrdinalPlaceholders(channel.mention, member.mention)
 		)
@@ -224,7 +219,7 @@ class DevChannelExtension(
 
 	private suspend fun CheckContext<ApplicationCommandInteractionCreateEvent>.ownsADevChannel() {
 		failIfNot(Translations.Check.Fail.Dev.none) {
-			return@failIfNot devChannelService.getByUserId(event.interaction.user.id.value.toLong())?.channelId != null
+			return@failIfNot DevChannelService.exists(event.interaction.user.id.value)
 		}
 	}
 

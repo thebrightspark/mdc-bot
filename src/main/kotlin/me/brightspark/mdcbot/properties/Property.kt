@@ -47,13 +47,13 @@ class Property<T>(
 			longName = Translations.Property.RoleModerator.longName,
 			description = Translations.Property.RoleModerator.desc
 		)
-		val AUTO_PUBLISH_CHANNELS = create(
-			type = CHANNELS,
-			id = "channels.autopublish",
-			name = Translations.Property.AutoPublishChannels.name,
-			longName = Translations.Property.AutoPublishChannels.longName,
-			description = Translations.Property.AutoPublishChannels.desc
-		)
+//		val AUTO_PUBLISH_CHANNELS = create(
+//			type = CHANNELS,
+//			id = "channels.autopublish",
+//			name = Translations.Property.AutoPublishChannels.name,
+//			longName = Translations.Property.AutoPublishChannels.longName,
+//			description = Translations.Property.AutoPublishChannels.desc
+//		)
 
 		private fun <T> create(
 			type: PropertyType<T>,
