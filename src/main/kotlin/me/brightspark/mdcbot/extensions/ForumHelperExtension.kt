@@ -21,7 +21,6 @@ import dev.kordex.core.extensions.ephemeralSlashCommand
 import dev.kordex.core.utils.FilterStrategy
 import dev.kordex.core.utils.suggestStringCollection
 import i18n.Translations
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.joinAll
@@ -32,8 +31,6 @@ import me.brightspark.mdcbot.util.respondSimple
 import me.brightspark.mdcbot.util.toSimpleString
 
 class ForumHelperExtension : BaseExtension("forum-helper") {
-	private val log = KotlinLogging.logger {}
-
 	override suspend fun setup() {
 		intents(Intent.Guilds)
 

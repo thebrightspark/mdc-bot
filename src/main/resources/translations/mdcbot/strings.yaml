@@ -63,7 +63,6 @@ command:
       desc: Gets or creates an invite for your dev channel
       response:
         success: Invite to {0}:\n`{1}`
-
   forum:
     name: forum
     desc: Commands for managing forum channels
@@ -90,6 +89,33 @@ command:
         start: Migrating threads in {0} from `{1]` to `{2}`...
         finished: Finished migrating {0} threads in {1} from `{2]` to `{3}`!
         not-exist: The tag `{0}` could not be found in {1}!
+
+sus-file:
+  dm: |
+    Hey {0}! Sorry but I've just deleted a message of yours in {1} because it contained a JAR file.
+    I've done this because JAR files could be malicious and therefore can't trust any just in-case!
+    
+    You're not in trouble! However the moderators have been notified as a precaution.
+    But if this file was something you feel should be allowed to be shared, then please ping the `@Moderator` role in that channel and ask one to allow you.
+  channel-message: |
+    Hey {0}! Sorry but I've just deleted your message because it contained a JAR file.
+    I've done this because JAR files could be malicious and therefore can't trust any just in-case!
+    
+    You're not in trouble! However the moderators have been notified as a precaution.
+    But if this file was something you feel should be allowed to be shared, then please ping the `@Moderator` role and ask one to allow you.
+  command:
+    allow:
+      name: allow-jar
+      desc: Allow a specified person to post a message containing JAR files in this channel
+      message: |
+        {0} you've been allowed to post one message containing JAR files to this channel! This will expire <t:{1}:R>
+      arg:
+        user:
+          name: user
+          desc: The user to allow
+        expiry:
+          name: expiry
+          desc: "Optional expiry for this allowance (default: 10 minutes)"
 
 user-command:
   dev:

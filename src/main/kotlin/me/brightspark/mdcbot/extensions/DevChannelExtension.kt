@@ -24,7 +24,6 @@ import dev.kordex.core.extensions.publicSlashCommand
 import dev.kordex.core.extensions.publicUserCommand
 import dev.kordex.core.types.PublicInteractionContext
 import i18n.Translations
-import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.database.service.DevChannelService
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.service.LoggingService
@@ -35,8 +34,6 @@ import me.brightspark.mdcbot.util.toSimpleString
 import kotlin.time.Duration
 
 class DevChannelExtension : BaseExtension("dev-channel") {
-	private val log = KotlinLogging.logger {}
-
 	override suspend fun setup() {
 		intents(Intent.Guilds)
 

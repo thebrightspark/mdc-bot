@@ -12,7 +12,6 @@ import dev.kordex.core.components.forms.ModalForm
 import dev.kordex.core.extensions.ephemeralSlashCommand
 import dev.kordex.core.types.EphemeralInteractionContext
 import i18n.Translations
-import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.service.LoggingService
 import me.brightspark.mdcbot.service.PropertyService
@@ -20,8 +19,6 @@ import me.brightspark.mdcbot.util.respondEmbed
 import me.brightspark.mdcbot.util.respondSimple
 
 class ConfigurationExtension : BaseExtension("configuration") {
-	private val log = KotlinLogging.logger {}
-
 	override suspend fun setup() {
 		ephemeralSlashCommand {
 			name = Translations.Command.Config.name

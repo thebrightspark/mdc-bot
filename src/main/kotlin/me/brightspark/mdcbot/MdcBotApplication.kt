@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import me.brightspark.mdcbot.database.DbConnection
 import me.brightspark.mdcbot.extensions.ConfigurationExtension
+import me.brightspark.mdcbot.extensions.DeleteSusFilesExtension
 import me.brightspark.mdcbot.extensions.DevChannelExtension
 import me.brightspark.mdcbot.extensions.ForumHelperExtension
 
@@ -24,6 +25,7 @@ suspend fun main() {
 		}
 		extensions {
 			add(::ConfigurationExtension)
+			add(::DeleteSusFilesExtension)
 			add(::DevChannelExtension)
 			add(::ForumHelperExtension)
 		}

@@ -6,11 +6,8 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.gateway.Intent
 import dev.kordex.core.checks.isNotBot
 import dev.kordex.core.extensions.event
-import io.github.oshai.kotlinlogging.KotlinLogging
 
 class AutoPublishExtension : BaseExtension("auto-publish") {
-	private val log = KotlinLogging.logger {}
-
 	override suspend fun setup() {
 		intents(Intent.GuildMessages)
 

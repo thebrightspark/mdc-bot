@@ -18,11 +18,14 @@ import dev.kordex.core.extensions.Extension
 import dev.kordex.core.utils.hasPermissions
 import dev.kordex.i18n.Key
 import i18n.Translations
+import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.Config
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.service.PropertyService
 
 abstract class BaseExtension(override val name: String) : Extension() {
+	protected val log = KotlinLogging.logger {}
+
 	protected val mdcGuildId: Snowflake
 		get() = Config.guildId
 
