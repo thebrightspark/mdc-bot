@@ -3,6 +3,7 @@ package me.brightspark.mdcbot.extensions
 import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.entity.Attachment
 import dev.kord.core.entity.User
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.gateway.Intent
@@ -24,15 +25,24 @@ class DeleteSusFilesExtension : BaseExtension("delete-sus-files") {
 	companion object {
 		private const val MIME_JAR = "application/java-archive"
 		private const val SUFFIX_JAR = ".jar"
+
+		private fun isJarAttachment(attachment: Attachment): Boolean =
+			attachment.contentType == MIME_JAR || attachment.filename.endsWith(SUFFIX_JAR)
 	}
 
 	private val jarFileAllow: MutableMap<JarFileAllowKey, JarFileAllowEntry> = mutableMapOf()
+
+	private fun cleanupJarFileAllow() {
+		val timeNow = Clock.System.now().epochSeconds
+		jarFileAllow.entries.removeAll { it.value.expiry > timeNow }
+	}
 
 	private fun isUserJarFileAllowedAndRemove(user: User?, channelId: Snowflake): Boolean =
 		user != null && jarFileAllow.remove(JarFileAllowKey(user.id, channelId))
 			?.takeIf { it.expiry > Clock.System.now().epochSeconds } != null
 
 	private fun putUserJarFileAllowed(userId: Snowflake, channelId: Snowflake, expiry: Long) {
+		cleanupJarFileAllow()
 		jarFileAllow[JarFileAllowKey(userId, channelId)] = JarFileAllowEntry(expiry)
 	}
 
@@ -42,22 +52,20 @@ class DeleteSusFilesExtension : BaseExtension("delete-sus-files") {
 		event<MessageCreateEvent> {
 			check { isNotBot() }
 			check { botHasPermissions(Permission.ManageChannels) }
+			check { failIfNot { event.message.attachments.any(::isJarAttachment) } }
 			action {
 				val message = event.message
 				val author = message.author
+
 				if (isUserJarFileAllowedAndRemove(author, message.channelId))
 					return@action // Allow user to post
 
-				val jarFiles =
-					message.attachments.filter { it.contentType == MIME_JAR || it.filename.endsWith(SUFFIX_JAR) }
-				if (jarFiles.isNotEmpty()) {
-					message.delete("Message contained JAR file attachments")
-					message.author?.let { user ->
-						user.dm {
-							content = Translations.SusFile.dm.translate(user.mention, message.channel.mention)
-						} ?: message.channel.createMessage {
-							content = Translations.SusFile.channelMessage.translate(user.mention)
-						}
+				message.delete("Message contained JAR file attachments")
+				message.author?.let { user ->
+					user.dm {
+						content = Translations.SusFile.dm.translate(user.mention, message.channel.mention)
+					} ?: message.channel.createMessage {
+						content = Translations.SusFile.channelMessage.translate(user.mention)
 					}
 				}
 			}
