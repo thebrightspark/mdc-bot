@@ -15,7 +15,6 @@ import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
 import dev.kord.gateway.Intent
 import dev.kordex.core.checks.types.CheckContext
 import dev.kordex.core.commands.Arguments
-import dev.kordex.core.commands.application.slash.ephemeralSubCommand
 import dev.kordex.core.commands.application.slash.publicSubCommand
 import dev.kordex.core.commands.converters.impl.optionalMember
 import dev.kordex.core.commands.converters.impl.optionalString
@@ -146,9 +145,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 				}
 			}
 
-			ephemeralSubCommand {
-
-			}
+			// TODO: Command to recover dev channels DB from what exists
 		}
 
 		publicUserCommand {
