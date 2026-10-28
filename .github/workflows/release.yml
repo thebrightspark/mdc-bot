@@ -26,10 +26,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build
-        run: ./gradlew bootJar
+        run: ./gradlew distZip
 
       - name: Upload release artifact
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.GITHUB_REF_NAME }}
-          files: build/libs/MDC-Bot-*.jar
+          files: build/distributions/MDC-Bot-*.zip
