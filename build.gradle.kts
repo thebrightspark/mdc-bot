@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "me.brightspark"
-version = "0.3.0"
+version = "1.0.0"
 
 kotlin {
 	jvmToolchain(21)
