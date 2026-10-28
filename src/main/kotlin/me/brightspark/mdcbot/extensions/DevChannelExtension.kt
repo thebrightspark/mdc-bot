@@ -15,6 +15,7 @@ import dev.kord.core.event.interaction.ApplicationCommandInteractionCreateEvent
 import dev.kord.gateway.Intent
 import dev.kordex.core.checks.types.CheckContext
 import dev.kordex.core.commands.Arguments
+import dev.kordex.core.commands.application.slash.ephemeralSubCommand
 import dev.kordex.core.commands.application.slash.publicSubCommand
 import dev.kordex.core.commands.converters.impl.optionalMember
 import dev.kordex.core.commands.converters.impl.optionalString
@@ -58,13 +59,13 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 		}
 
 		publicSlashCommand {
-			name = Translations.Command.Dev.name
-			description = Translations.Command.Dev.desc
+			name = Translations.Dev.Command.name
+			description = Translations.Dev.Command.desc
 			mdcGuild()
 
 			publicSubCommand(::CreateDevChannelArguments) {
-				name = Translations.Command.Dev.Create.name
-				description = Translations.Command.Dev.Create.desc
+				name = Translations.Dev.Command.Create.name
+				description = Translations.Dev.Command.Create.desc
 				requireBotPermissions(Permission.ManageChannels)
 				userRequiresModeratorPermission() // TODO: Later allow this to be used by devs
 
@@ -83,8 +84,8 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 			}
 
 			publicSubCommand(::RenameArguments) {
-				name = Translations.Command.Dev.Rename.name
-				description = Translations.Command.Dev.Rename.desc
+				name = Translations.Dev.Command.Rename.name
+				description = Translations.Dev.Command.Rename.desc
 				check { ownsADevChannel() }
 
 				action {
@@ -96,7 +97,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 						?: run {
 							// Channel does not exist!
 							DevChannelService.remove(channelId)
-							respondSimple(Translations.Command.Dev.Rename.Response.notExist)
+							respondSimple(Translations.Dev.Command.Rename.Response.notExist)
 							return@action
 						}
 
@@ -107,14 +108,14 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 					}.name
 
 					LoggingService.log("Renamed channel $channelId from `$oldName` to `$newName`", user)
-					respondSimple(Translations.Command.Dev.Rename.Response.success.withOrdinalPlaceholders(newName))
+					respondSimple(Translations.Dev.Command.Rename.Response.success.withOrdinalPlaceholders(newName))
 					log.info { "Command dev rename: ${user.toSimpleString()} renamed channel $channelId from '$oldName' to '$newName'" }
 				}
 			}
 
 			publicSubCommand {
-				name = Translations.Command.Dev.Invite.name
-				description = Translations.Command.Dev.Invite.desc
+				name = Translations.Dev.Command.Invite.name
+				description = Translations.Dev.Command.Invite.desc
 				check { ownsADevChannel() }
 
 				action {
@@ -139,10 +140,14 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 					}
 
 					respondSimple(
-						Translations.Command.Dev.Invite.Response.success
+						Translations.Dev.Command.Invite.Response.success
 							.withOrdinalPlaceholders(channel.mention, "https://discord.gg/${invite.code}")
 					)
 				}
+			}
+
+			ephemeralSubCommand {
+
 			}
 		}
 
@@ -169,7 +174,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 			kord.getChannel(Snowflake(devChannelId))?.let { channel ->
 				// Channel already exists!
 				respondSimple(
-					Translations.Command.Dev.Create.Response.exists
+					Translations.Dev.Command.Create.Response.exists
 						.withOrdinalPlaceholders(member.mention, channel.mention)
 				)
 				return
@@ -181,12 +186,12 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 		}
 
 		val categoryId = PropertyService.get(Property.CATEGORY_DEV) ?: run {
-			respondSimple(Translations.Command.Dev.Create.Response.categoryNotSet)
+			respondSimple(Translations.Dev.Command.Create.Response.categoryNotSet)
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
 		}
 		val category = kord.getCategory(categoryId) ?: run {
-			respondSimple(Translations.Command.Dev.Create.Response.categoryNotFound)
+			respondSimple(Translations.Dev.Command.Create.Response.categoryNotFound)
 			log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
 			return
 		}
@@ -209,7 +214,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 
 		LoggingService.log("New dev channel ${channel.mention} created, owned by ${member.mention}", creator)
 		respondSimple(
-			Translations.Command.Dev.Create.Response.success.withOrdinalPlaceholders(channel.mention, member.mention)
+			Translations.Dev.Command.Create.Response.success.withOrdinalPlaceholders(channel.mention, member.mention)
 		)
 		log.info { "Command createDevChannel: ${creator.toSimpleString()} created new dev channel ${channel.toSimpleString()} for member ${member.toSimpleString()}" }
 	}
@@ -222,19 +227,19 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 
 	class CreateDevChannelArguments : Arguments() {
 		val member: Member? by optionalMember {
-			name = Translations.Command.Dev.Create.Arg.Member.name
-			description = Translations.Command.Dev.Create.Arg.Member.desc
+			name = Translations.Dev.Command.Create.Arg.Member.name
+			description = Translations.Dev.Command.Create.Arg.Member.desc
 		}
 		val name: String? by optionalString {
-			name = Translations.Command.Dev.Create.Arg.Name.name
-			description = Translations.Command.Dev.Create.Arg.Name.desc
+			name = Translations.Dev.Command.Create.Arg.Name.name
+			description = Translations.Dev.Command.Create.Arg.Name.desc
 		}
 	}
 
 	class RenameArguments : Arguments() {
 		val name: String by string {
-			name = Translations.Command.Dev.Rename.Arg.Name.name
-			description = Translations.Command.Dev.Rename.Arg.Name.desc
+			name = Translations.Dev.Command.Rename.Arg.Name.name
+			description = Translations.Dev.Command.Rename.Arg.Name.desc
 		}
 	}
 }

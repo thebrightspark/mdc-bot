@@ -1,5 +1,5 @@
-command:
-  config:
+config:
+  command:
     name: config
     desc: Configuration commands
     list:
@@ -30,7 +30,9 @@ command:
           channels:
             name: auto-publish-channels
             desc: The channels to automatically publish any messages sent in
-  dev:
+
+dev:
+  command:
     name: dev
     desc: Commands for developers to use for creating and managing their personal channels
     create:
@@ -63,7 +65,9 @@ command:
       desc: Gets or creates an invite for your dev channel
       response:
         success: Invite to {0}:\n`{1}`
-  forum:
+
+forum:
+  command:
     name: forum
     desc: Commands for managing forum channels
     arg:

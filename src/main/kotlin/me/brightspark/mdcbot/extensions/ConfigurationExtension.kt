@@ -21,14 +21,14 @@ import me.brightspark.mdcbot.util.respondSimple
 class ConfigurationExtension : BaseExtension("configuration") {
 	override suspend fun setup() {
 		ephemeralSlashCommand {
-			name = Translations.Command.Config.name
-			description = Translations.Command.Config.desc
+			name = Translations.Config.Command.name
+			description = Translations.Config.Command.desc
 			mdcGuild()
 			userRequiresAdminPermission()
 
 			ephemeralSubCommand {
-				name = Translations.Command.Config.List.name
-				description = Translations.Command.Config.List.desc
+				name = Translations.Config.Command.List.name
+				description = Translations.Config.Command.List.desc
 
 				action {
 					respondEmbed {
@@ -36,7 +36,7 @@ class ConfigurationExtension : BaseExtension("configuration") {
 							field(prop.nameTranslated, true) {
 								val rawValue = PropertyService.getRaw(prop)
 								val value = prop.deserialiseToDisplayString(guild!!, rawValue)
-								Translations.Command.Config.List.Response.success.translate(value, rawValue)
+								Translations.Config.Command.List.Response.success.translate(value, rawValue)
 							}
 						}
 					}
@@ -63,32 +63,32 @@ class ConfigurationExtension : BaseExtension("configuration") {
 
 	class ChannelLogsArguments : Arguments() {
 		val channel by optionalChannel {
-			name = Translations.Command.Config.Set.ChannelLogs.Arg.Channel.name
-			description = Translations.Command.Config.Set.ChannelLogs.Arg.Channel.desc
+			name = Translations.Config.Command.Set.ChannelLogs.Arg.Channel.name
+			description = Translations.Config.Command.Set.ChannelLogs.Arg.Channel.desc
 			requireChannelType(ChannelType.GuildText)
 		}
 	}
 
 	class CategoryDevArguments : Arguments() {
 		val category by optionalChannel {
-			name = Translations.Command.Config.Set.CategoryDev.Arg.Category.name
-			description = Translations.Command.Config.Set.CategoryDev.Arg.Category.desc
+			name = Translations.Config.Command.Set.CategoryDev.Arg.Category.name
+			description = Translations.Config.Command.Set.CategoryDev.Arg.Category.desc
 			requireChannelType(ChannelType.GuildCategory)
 		}
 	}
 
 	class RoleModeratorArguments : Arguments() {
 		val role by optionalRole {
-			name = Translations.Command.Config.Set.RoleModerator.Arg.Role.name
-			description = Translations.Command.Config.Set.RoleModerator.Arg.Role.desc
+			name = Translations.Config.Command.Set.RoleModerator.Arg.Role.name
+			description = Translations.Config.Command.Set.RoleModerator.Arg.Role.desc
 		}
 	}
 
 	// FIXME: This doesn't work atm - the value converter throws an error on use
 //	class ChannelsAutoPublishArguments : Arguments() {
 //		val channels by channelList {
-//			name = Translations.Command.Config.Set.AutoPublish.Arg.Channels.name
-//			description = Translations.Command.Config.Set.AutoPublish.Arg.Channels.desc
+//			name = Translations.Config.Command.Set.AutoPublish.Arg.Channels.name
+//			description = Translations.Config.Command.Set.AutoPublish.Arg.Channels.desc
 //			requireChannelType(ChannelType.GuildText)
 //		}
 //	}
@@ -98,7 +98,7 @@ class ConfigurationExtension : BaseExtension("configuration") {
 		argValueGetter: (ARGS) -> T
 	) {
 		name = property.name
-		description = Translations.Command.Config.Set.desc.withOrdinalPlaceholders(property.description)
+		description = Translations.Config.Command.Set.desc.withOrdinalPlaceholders(property.description)
 		action {
 			setProperty(guild!!, user, argValueGetter(arguments), property)
 		}

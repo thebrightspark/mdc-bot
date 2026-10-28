@@ -35,14 +35,14 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 		intents(Intent.Guilds)
 
 		ephemeralSlashCommand {
-			name = Translations.Command.Forum.name
-			description = Translations.Command.Forum.desc
+			name = Translations.Forum.Command.name
+			description = Translations.Forum.Command.desc
 			mdcGuild()
 			userRequiresModeratorPermission()
 
 			ephemeralSubCommand(::GetTagsArguments) {
-				name = Translations.Command.Forum.GetTags.name
-				description = Translations.Command.Forum.GetTags.desc
+				name = Translations.Forum.Command.GetTags.name
+				description = Translations.Forum.Command.GetTags.desc
 
 				action {
 					val forumChannel = arguments.forumChannel.asChannelOf<ForumChannel>()
@@ -60,15 +60,15 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 						sb.append("- ").append(emoji).append(tag.name)
 					}
 					respondSimple(
-						Translations.Command.Forum.GetTags.Response.success
+						Translations.Forum.Command.GetTags.Response.success
 							.withOrdinalPlaceholders(forumChannel.mention, sb)
 					)
 				}
 			}
 
 			ephemeralSubCommand(::MigrateTagArguments) {
-				name = Translations.Command.Forum.MigrateTag.name
-				description = Translations.Command.Forum.MigrateTag.desc
+				name = Translations.Forum.Command.MigrateTag.name
+				description = Translations.Forum.Command.MigrateTag.desc
 
 				action {
 					val forumChannel = arguments.forumChannel.asChannelOf<ForumChannel>()
@@ -79,7 +79,7 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 
 					suspend fun tagNotExists(tagName: String) {
 						respondSimple(
-							Translations.Command.Forum.MigrateTag.Response.notExist
+							Translations.Forum.Command.MigrateTag.Response.notExist
 								.withOrdinalPlaceholders(tagName, forumChannel.mention)
 						)
 					}
@@ -89,7 +89,7 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 
 					log.info { "Command forum migrate-tag: Will migrate threads in ${forumChannel.toSimpleString()} with tag ${tagFrom.toSimpleString()} to ${tagTo.toSimpleString()}" }
 					val responseMessage = respondSimple(
-						Translations.Command.Forum.MigrateTag.Response.start
+						Translations.Forum.Command.MigrateTag.Response.start
 							.withOrdinalPlaceholders(forumChannel.mention, tagFromName, tagToName),
 						DISCORD_YELLOW
 					)
@@ -122,7 +122,7 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 						user.asUser()
 					)
 					responseMessage.editSimple(
-						Translations.Command.Forum.MigrateTag.Response.finished
+						Translations.Forum.Command.MigrateTag.Response.finished
 							.withOrdinalPlaceholders(numUpdated, forumChannel.mention, tagFromName, tagToName),
 						DISCORD_GREEN
 					)
@@ -133,8 +133,8 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 
 	abstract class ForumCommandArguments : Arguments() {
 		val forumChannel: Channel by channel {
-			name = Translations.Command.Forum.Arg.Channel.name
-			description = Translations.Command.Forum.Arg.Channel.desc
+			name = Translations.Forum.Command.Arg.Channel.name
+			description = Translations.Forum.Command.Arg.Channel.desc
 			requireChannelType(ChannelType.GuildForum)
 		}
 	}
@@ -151,13 +151,13 @@ class ForumHelperExtension : BaseExtension("forum-helper") {
 		}
 
 		val tagFrom: String by string {
-			name = Translations.Command.Forum.MigrateTag.Arg.TagFrom.name
-			description = Translations.Command.Forum.MigrateTag.Arg.TagFrom.desc
+			name = Translations.Forum.Command.MigrateTag.Arg.TagFrom.name
+			description = Translations.Forum.Command.MigrateTag.Arg.TagFrom.desc
 			autoComplete { tagAutocomplete() }
 		}
 		val tagTo: String by string {
-			name = Translations.Command.Forum.MigrateTag.Arg.TagTo.name
-			description = Translations.Command.Forum.MigrateTag.Arg.TagTo.desc
+			name = Translations.Forum.Command.MigrateTag.Arg.TagTo.name
+			description = Translations.Forum.Command.MigrateTag.Arg.TagTo.desc
 			autoComplete { tagAutocomplete() }
 		}
 	}
