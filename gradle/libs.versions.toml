@@ -4,7 +4,7 @@ kotlin-coroutines = "1.11.0" # https://mvnrepository.com/artifact/org.jetbrains.
 logback = "1.6.6" # https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 caffeine = "3.3.1" # https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
 exposed = "1.6.0" # https://github.com/JetBrains/Exposed/releases
-sqlite = "3.53.4.0"
+sqlite = "3.54.1.0"
 sparkconfig = "1.2.0"
 
 kordex-plugin = "1.9.2" # https://docs.kordex.dev/bots/gradle-plugin/
