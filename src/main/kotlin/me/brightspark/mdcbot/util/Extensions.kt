@@ -12,6 +12,7 @@ import dev.kord.core.entity.channel.Channel
 import dev.kord.core.entity.interaction.followup.EphemeralFollowupMessage
 import dev.kord.core.entity.interaction.followup.PublicFollowupMessage
 import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.MessageBuilder
 import dev.kord.rest.builder.message.embed
 import dev.kordex.core.DISCORD_BLACK
 import dev.kordex.core.types.EphemeralInteractionContext
@@ -41,7 +42,7 @@ suspend fun EphemeralInteractionContext.respondSimple(
 suspend fun EphemeralInteractionContext.respondSimple(
 	message: String,
 	color: Color = DISCORD_BLACK
-): EphemeralFollowupMessage = respondEmbed(color) { description = message }
+): EphemeralFollowupMessage = respond { simpleEmbed(message, color) }
 
 suspend fun EphemeralInteractionContext.respondEmbed(
 	color: Color = DISCORD_BLACK,
@@ -61,12 +62,7 @@ suspend fun PublicInteractionContext.respondSimple(
 suspend fun PublicInteractionContext.respondSimple(
 	message: String,
 	color: Color = DISCORD_BLACK
-): PublicFollowupMessage = respond {
-	embed {
-		this.color = color
-		description = message
-	}
-}
+): PublicFollowupMessage = respond { simpleEmbed(message, color) }
 
 suspend fun EphemeralFollowupMessage.editSimple(
 	message: Key,
@@ -76,7 +72,9 @@ suspend fun EphemeralFollowupMessage.editSimple(
 suspend fun EphemeralFollowupMessage.editSimple(
 	message: String,
 	color: Color = DISCORD_BLACK
-): EphemeralFollowupMessage = edit {
+): EphemeralFollowupMessage = edit { simpleEmbed(message, color) }
+
+fun MessageBuilder.simpleEmbed(message: String, color: Color = DISCORD_BLACK) {
 	embed {
 		this.color = color
 		description = message

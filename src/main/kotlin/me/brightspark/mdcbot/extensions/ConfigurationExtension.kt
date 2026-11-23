@@ -43,12 +43,16 @@ class ConfigurationExtension : BaseExtension("configuration") {
 				}
 			}
 
-			ephemeralSubCommand(::ChannelLogsArguments) {
-				setupPropertyCommand(Property.CHANNEL_LOGS) { it.channel?.id }
-			}
-
 			ephemeralSubCommand(::CategoryDevArguments) {
 				setupPropertyCommand(Property.CATEGORY_DEV) { it.category?.id }
+			}
+
+			ephemeralSubCommand(::ChannelJobsForumArguments) {
+				setupPropertyCommand(Property.CHANNEL_JOBS_FORUM) { it.channel?.id }
+			}
+
+			ephemeralSubCommand(::ChannelLogsArguments) {
+				setupPropertyCommand(Property.CHANNEL_LOGS) { it.channel?.id }
 			}
 
 			ephemeralSubCommand(::RoleModeratorArguments) {
@@ -61,19 +65,27 @@ class ConfigurationExtension : BaseExtension("configuration") {
 		}
 	}
 
-	class ChannelLogsArguments : Arguments() {
-		val channel by optionalChannel {
-			name = Translations.Config.Command.Set.ChannelLogs.Arg.Channel.name
-			description = Translations.Config.Command.Set.ChannelLogs.Arg.Channel.desc
-			requireChannelType(ChannelType.GuildText)
-		}
-	}
-
 	class CategoryDevArguments : Arguments() {
 		val category by optionalChannel {
 			name = Translations.Config.Command.Set.CategoryDev.Arg.Category.name
 			description = Translations.Config.Command.Set.CategoryDev.Arg.Category.desc
 			requireChannelType(ChannelType.GuildCategory)
+		}
+	}
+
+	class ChannelJobsForumArguments : Arguments() {
+		val channel by optionalChannel {
+			name = Translations.Config.Command.Set.ChannelJobsForum.Arg.Channel.name
+			description = Translations.Config.Command.Set.ChannelJobsForum.Arg.Channel.desc
+			requireChannelType(ChannelType.GuildForum)
+		}
+	}
+
+	class ChannelLogsArguments : Arguments() {
+		val channel by optionalChannel {
+			name = Translations.Config.Command.Set.ChannelLogs.Arg.Channel.name
+			description = Translations.Config.Command.Set.ChannelLogs.Arg.Channel.desc
+			requireChannelType(ChannelType.GuildText)
 		}
 	}
 

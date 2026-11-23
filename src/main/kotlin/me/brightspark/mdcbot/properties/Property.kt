@@ -26,19 +26,26 @@ class Property<T>(
 		const val VALUE_NONE = "<NONE>"
 		val ALL: List<Property<out Any?>> by lazy { ALL_SET.sortedBy { it.nameTranslated } }
 
-		val CHANNEL_LOGS = create(
-			type = CHANNEL,
-			id = "channel.logs",
-			name = Translations.Property.ChannelLogs.name,
-			longName = Translations.Property.ChannelLogs.longName,
-			description = Translations.Property.ChannelLogs.desc
-		)
 		val CATEGORY_DEV = create(
 			type = CATEGORY,
 			id = "category.dev",
 			name = Translations.Property.CategoryDev.name,
 			longName = Translations.Property.CategoryDev.longName,
 			description = Translations.Property.CategoryDev.desc
+		)
+		val CHANNEL_JOBS_FORUM = create(
+			type = CHANNEL,
+			id = "channel.jobs-forum",
+			name = Translations.Property.ChannelJobsForum.name,
+			longName = Translations.Property.ChannelJobsForum.longName,
+			description = Translations.Property.ChannelJobsForum.desc
+		)
+		val CHANNEL_LOGS = create(
+			type = CHANNEL,
+			id = "channel.logs",
+			name = Translations.Property.ChannelLogs.name,
+			longName = Translations.Property.ChannelLogs.longName,
+			description = Translations.Property.ChannelLogs.desc
 		)
 		val ROLE_MODERATOR = create(
 			type = ROLE,

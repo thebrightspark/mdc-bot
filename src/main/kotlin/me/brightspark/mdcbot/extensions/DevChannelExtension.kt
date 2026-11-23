@@ -183,12 +183,12 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 		}
 
 		val categoryId = PropertyService.get(Property.CATEGORY_DEV) ?: run {
-			respondSimple(Translations.Dev.Command.Create.Response.categoryNotSet)
+			respondSimple(Translations.Error.DevChannel.categoryNotSet)
 			log.warn { "Command createDevChannel: Dev category has not been set" }
 			return
 		}
 		val category = kord.getCategory(categoryId) ?: run {
-			respondSimple(Translations.Dev.Command.Create.Response.categoryNotFound)
+			respondSimple(Translations.Error.DevChannel.categoryNotFound)
 			log.warn { "Command createDevChannel: Dev category with ID $categoryId could not be found" }
 			return
 		}

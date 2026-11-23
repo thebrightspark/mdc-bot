@@ -10,16 +10,21 @@ config:
     set:
       desc: Sets {0}
       select: "Please select an option:"
-      channel-logs:
-        arg:
-          channel:
-            name: log-channel
-            desc: The text channel to send logs to
       category-dev:
         arg:
           category:
             name: dev-category
             desc: The category to use for dev channels
+      channel-jobs-forum:
+        arg:
+          channel:
+            name: jobs-forum-channel
+            desc: The forum channel for jobs to be created in
+      channel-logs:
+        arg:
+          channel:
+            name: log-channel
+            desc: The text channel to send logs to
       role-moderator:
         arg:
           role:
@@ -48,8 +53,6 @@ dev:
       response:
         success: New dev channel {0} create, owned by {1}
         exists: A channel already exists for {0} -> {1}
-        category-not-set: The dev category has not been set!
-        category-not-found: The dev category could not be found!
     rename:
       name: rename
       desc: Renames your dev channel
@@ -65,6 +68,14 @@ dev:
       desc: Gets or creates an invite for your dev channel
       response:
         success: Invite to {0}:\n`{1}`
+    list:
+      name: list
+      desc: Lists all of the dev channels tracked by the bot
+    recover:
+      name: recover
+      desc: Recovers internal data about dev channels from the existing channels in the configured category
+      response:
+        success: Recovered {0} dev channel{0, plural, one {} other {s}}
 
 forum:
   command:
@@ -93,6 +104,58 @@ forum:
         start: Migrating threads in {0} from `{1]` to `{2}`...
         finished: Finished migrating {0} threads in {1} from `{2]` to `{3}`!
         not-exist: The tag `{0}` could not be found in {1}!
+
+forum-forms:
+  command:
+    create-job-post:
+      name: create-job-post
+      desc: "Creates a new job post in #jobs-and-requests"
+      modal:
+        title: Create Job Post
+      components:
+        name:
+          label: Job Title
+          placeholder: Most likely the name of your project
+        work-type:
+          label: Work Required
+          options:
+            coding: Coding
+            textures: Textures
+            models: Models
+            sounds: Sounds
+            config: Config
+        mc-version:
+          label: MC Version
+          placeholder: The version(s) of Minecraft this is targeting
+        mod-loader:
+          label: Mod Loader
+          options:
+            forge: Forge
+            neoforge: NeoForge
+            fabric: Fabric
+            quilt: Quilt
+            plugin: Plugin
+            other: Other
+        pay-type:
+          label: Pay
+          options:
+            unpaid: Unpaid
+            rev-share: "Paid: Revenue Share"
+            money: "Paid: Money"
+        next-button:
+          label: Continue
+        ai-usage:
+          label: AI Usage
+          placeholder: Please state how much AI usage you'll accept from someone you hire
+        details:
+          label: Details
+          placeholder: Include as much detail as possible - DO NOT ask to DM you for more info
+        images:
+          label: Images
+          desc: "[Optional] Images to accompany your job post"
+      management-message:
+        lock-button: Lock thread
+        unlock-button: Unlock thread
 
 sus-file:
   dm: |
@@ -133,6 +196,9 @@ check:
 error:
   bot:
     permission: Missing permission{0, plural, one {} other {s}} {1}!
+  dev-channel:
+    category-not-set: The dev category has not been set!
+    category-not-found: The dev category could not be found!
 
 property:
   channel-logs:
@@ -147,6 +213,10 @@ property:
     name: moderator-role
     long-name: Server moderator role
     desc: the server moderator role
+  channel-jobs-forum:
+    name: jobs-forum
+    long-name: Jobs Forum Channel
+    desc: the jobs forum channel to create new job post threads in
   auto-publish-channels:
     name: auto-publish-channels
     long-name: Auto publish channels

@@ -40,6 +40,7 @@ dependencies {
 }
 
 kordEx {
+	module("dev-unsafe")
 	bot {
 		mainClass = "me.brightspark.mdcbot.MdcBotApplicationKt"
 		voice = false
