@@ -4,9 +4,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import me.brightspark.mdcbot.database.table.DevChannelEntity
 import me.brightspark.mdcbot.database.table.DevChannelTable
 import me.brightspark.mdcbot.database.updateOrCreate
+import me.brightspark.mdcbot.model.DevChannel
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteAll
-import org.jetbrains.exposed.v1.jdbc.deleteIgnoreWhere
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
@@ -27,12 +28,18 @@ object DevChannelService {
 			.count() > 0
 	}
 
-	fun getByChannelId(channelId: ULong): DevChannelEntity? = transaction {
-		DevChannelEntity.findById(channelId)
+	fun getAll(): List<DevChannel> = transaction {
+		DevChannelEntity.all().map(DevChannel::fromEntity)
 	}
 
-	fun getByUserId(userId: ULong): DevChannelEntity? = transaction {
-		DevChannelEntity.find { DevChannelTable.userId eq userId }.limit(1).firstOrNull()
+	fun getByChannelId(channelId: ULong): DevChannel? = transaction {
+		DevChannelEntity.findById(channelId)?.let { DevChannel.fromEntity(it) }
+	}
+
+	fun getByUserId(userId: ULong): DevChannel? = transaction {
+		DevChannelEntity.find { DevChannelTable.userId eq userId }.limit(1)
+			.firstOrNull()
+			?.let { DevChannel.fromEntity(it) }
 	}
 
 	fun setInvite(channelId: ULong, inviteCode: String): Unit = transaction {
@@ -40,12 +47,10 @@ object DevChannelService {
 	}
 
 	fun remove(channelId: ULong) {
-		transaction { DevChannelTable.deleteIgnoreWhere { DevChannelTable.id eq channelId } }
+		transaction { DevChannelTable.deleteWhere { DevChannelTable.id eq channelId } }
 		log.info { "remove: Removed entry $channelId" }
 	}
 
-	fun removeAll() {
-		val count = transaction { DevChannelTable.deleteAll() }
-		log.info { "removeAll: Removed all $count entries" }
-	}
+	fun removeAll(): Int = transaction { DevChannelTable.deleteAll() }
+		.also { log.info { "removeAll: Removed all $it entries" } }
 }

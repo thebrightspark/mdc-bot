@@ -16,6 +16,7 @@ import dev.kord.gateway.Intent
 import dev.kordex.core.checks.types.CheckContext
 import dev.kordex.core.commands.Arguments
 import dev.kordex.core.commands.application.slash.publicSubCommand
+import dev.kordex.core.commands.converters.impl.defaultingBoolean
 import dev.kordex.core.commands.converters.impl.optionalMember
 import dev.kordex.core.commands.converters.impl.optionalString
 import dev.kordex.core.commands.converters.impl.string
@@ -24,6 +25,8 @@ import dev.kordex.core.extensions.publicSlashCommand
 import dev.kordex.core.extensions.publicUserCommand
 import dev.kordex.core.types.PublicInteractionContext
 import i18n.Translations
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.firstOrNull
 import me.brightspark.mdcbot.database.service.DevChannelService
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.service.LoggingService
@@ -34,14 +37,20 @@ import me.brightspark.mdcbot.util.toSimpleString
 import kotlin.time.Duration
 
 class DevChannelExtension : BaseExtension("dev-channel") {
+	companion object {
+		private val USER_ID_PATTERN = Regex("<@(\\d+)>")
+	}
+
 	override suspend fun setup() {
 		intents(Intent.Guilds)
 
 		event<CategoryDeleteEvent> {
 			checkIf { PropertyService.get(Property.CATEGORY_DEV).let { event.channel.id == it } }
 			action {
-				LoggingService.log("Dev category ${event.channel.toSimpleString()} was deleted")
-				log.info { "Dev category ${event.channel.toSimpleString()} deleted - removing all data" }
+				val channelString = event.channel.toSimpleString()
+				LoggingService.log("Dev category $channelString was deleted")
+				log.info { "Dev category $channelString deleted - removing all data" }
+				PropertyService.set(Property.CATEGORY_DEV, null)
 				DevChannelService.removeAll()
 			}
 		}
@@ -50,10 +59,22 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 			action {
 				val channel = event.channel
 				DevChannelService.getByChannelId(channel.id.value)?.let {
-					LoggingService.log("Dev channel ${channel.toSimpleString()} was deleted")
-					log.info { "Dev channel ${channel.toSimpleString()} deleted - removing data" }
-					DevChannelService.remove(it.id.value)
+					val channelString = channel.toSimpleString()
+					LoggingService.log("Dev channel $channelString was deleted")
+					log.info { "Dev channel $channelString deleted - removing data" }
+					DevChannelService.remove(it.channelId)
 				}
+			}
+		}
+
+		publicUserCommand {
+			name = Translations.UserCommand.Dev.name
+			mdcGuild()
+			userRequiresModeratorPermission()
+
+			action {
+				val member = event.interaction.getTarget().asMember(event.interaction.data.guildId.value!!)
+				createDevChannel(member = member, creator = event.interaction.user.asUser())
 			}
 		}
 
@@ -70,15 +91,9 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 
 				action {
 					val member = arguments.member ?: event.interaction.getMember()
-					arguments.name
-						?.let {
-							createDevChannel(
-								member = member,
-								name = it,
-								creator = event.interaction.user.asUser()
-							)
-						}
-						?: createDevChannel(member = member, creator = event.interaction.user.asUser())
+					arguments.name?.let {
+						createDevChannel(member = member, name = it, creator = event.interaction.user.asUser())
+					} ?: createDevChannel(member = member, creator = event.interaction.user.asUser())
 				}
 			}
 
@@ -90,7 +105,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 				action {
 					val user = event.interaction.user.asUser()
 					val devChannel = DevChannelService.getByUserId(user.id.value)!!
-					val channelId = devChannel.id.value
+					val channelId = devChannel.channelId
 					val channel = event.interaction.kord.getChannel(Snowflake(channelId))
 						?.takeIf { it is TextChannel }?.let { it as TextChannel }
 						?: run {
@@ -121,7 +136,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 					val user = event.interaction.user.asUser()
 					val devChannel = DevChannelService.getByUserId(user.id.value)!!
 					val kord = event.kord
-					val channel = kord.getChannel(Snowflake(devChannel.id.value))!! as TextChannel
+					val channel = kord.getChannel(Snowflake(devChannel.channelId))!! as TextChannel
 					val invite: Invite = devChannel.inviteCode?.let { inviteCode ->
 						kord.getGuildOrNull(mdcGuildId)!!.getInviteOrNull(inviteCode, false)
 					} ?: run {
@@ -129,7 +144,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 							maxAge = Duration.ZERO // No expiration
 							reason = "Invite for dev channel ${channel.toSimpleString()}"
 						}.also {
-							DevChannelService.setInvite(devChannel.id.value, it.code)
+							DevChannelService.setInvite(devChannel.channelId, it.code)
 							LoggingService.log(
 								"Created new invite '${it.code}' for dev channel ${channel.toSimpleString()}",
 								user
@@ -145,17 +160,72 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 				}
 			}
 
-			// TODO: Command to recover dev channels DB from what exists
-		}
+			publicSubCommand {
+				name = Translations.Dev.Command.List.name
+				description = Translations.Dev.Command.List.desc
+				mdcGuild()
+				userRequiresModeratorPermission()
 
-		publicUserCommand {
-			name = Translations.UserCommand.Dev.name
-			mdcGuild()
-			userRequiresModeratorPermission()
+				action {
+					val devChannelsString = DevChannelService.getAll().takeIf { it.isNotEmpty() }
+						?.map {
+							val channel = guild!!.getChannelOrNull(Snowflake(it.channelId))?.mention ?: it.channelId
+							val member = guild!!.getMemberOrNull(Snowflake(it.userId))?.mention ?: it.userId
+							return@map "$channel - $member"
+						}
+						?.joinToString("\n")
+						?: Translations.Dev.Command.List.Response.none.translateLocale(getLocale())
+					respondSimple(devChannelsString)
+				}
+			}
 
-			action {
-				val member = event.interaction.getTarget().asMember(event.interaction.data.guildId.value!!)
-				createDevChannel(member = member, creator = event.interaction.user.asUser())
+			publicSubCommand(::RecoverArguments) {
+				name = Translations.Dev.Command.Recover.name
+				description = Translations.Dev.Command.Recover.desc
+				mdcGuild()
+				userRequiresAdminPermission()
+
+				action {
+					val devCategory = PropertyService.get(Property.CATEGORY_DEV)?.let {
+						this@publicSubCommand.kord.getCategory(it) ?: run {
+							respondSimple(Translations.Error.DevChannel.categoryNotFound)
+							log.warn { "Command recover: Dev category with ID $it could not be found" }
+							return@action
+						}
+					} ?: run {
+						respondSimple(Translations.Error.DevChannel.categoryNotSet)
+						log.warn { "Command recover: Dev category has not been set" }
+						return@action
+					}
+
+					val removed = if (arguments.clear) DevChannelService.removeAll() else null
+
+					val botId = this@publicSubCommand.kord.selfId
+					var recovered = 0
+					devCategory.channels.filterIsInstance<TextChannel>().collect { channel ->
+						if (DevChannelService.getByChannelId(channel.id.value)?.botMessageId != null)
+							return@collect
+
+						channel.pinnedMessages.firstOrNull { it.author?.id == botId }?.let { message ->
+							val ownerId = message.embeds.firstOrNull()?.description
+								?.let { USER_ID_PATTERN.find(it) }?.groupValues?.get(1)
+								?: run {
+									log.warn { "Command recover: Owner ID not found in dev channel ${channel.toSimpleString()}'s bot message: '${message.content}'" }
+									return@collect
+								}
+							DevChannelService.create(channel.id.value, ownerId.toULong(), message.id.value)
+							recovered++
+							log.info { "Command recover: ${channel.toSimpleString()} -> $ownerId" }
+						} ?: run {
+							log.warn { "Command recover: Dev channel ${channel.toSimpleString()} has no pinned bot message" }
+						}
+					}
+
+					val responseKey = removed?.let {
+						Translations.Dev.Command.Recover.Response.successClear.withOrdinalPlaceholders(it, recovered)
+					} ?: Translations.Dev.Command.Recover.Response.success.withOrdinalPlaceholders(recovered)
+					respondSimple(responseKey)
+				}
 			}
 		}
 	}
@@ -167,7 +237,7 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 	) {
 		// Check if the member already owns a channel
 		DevChannelService.getByUserId(member.id.value)?.let { devChannel ->
-			val devChannelId = devChannel.id.value
+			val devChannelId = devChannel.channelId
 			kord.getChannel(Snowflake(devChannelId))?.let { channel ->
 				// Channel already exists!
 				respondSimple(
@@ -237,6 +307,14 @@ class DevChannelExtension : BaseExtension("dev-channel") {
 		val name: String by string {
 			name = Translations.Dev.Command.Rename.Arg.Name.name
 			description = Translations.Dev.Command.Rename.Arg.Name.desc
+		}
+	}
+
+	class RecoverArguments : Arguments() {
+		val clear: Boolean by defaultingBoolean {
+			name = Translations.Dev.Command.Recover.Arg.Clear.name
+			description = Translations.Dev.Command.Recover.Arg.Clear.desc
+			defaultValue = false
 		}
 	}
 }

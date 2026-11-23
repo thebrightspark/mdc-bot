@@ -71,11 +71,18 @@ dev:
     list:
       name: list
       desc: Lists all of the dev channels tracked by the bot
+      response:
+        none: No dev channels
     recover:
       name: recover
       desc: Recovers internal data about dev channels from the existing channels in the configured category
+      arg:
+        clear:
+          name: clear
+          desc: Whether to clear all internally stored dev channels first before recovering
       response:
         success: Recovered {0} dev channel{0, plural, one {} other {s}}
+        success-clear: Cleared {0} then recovered {1} dev channel{1, plural, one {} other {s}}
 
 forum:
   command:
