@@ -5,7 +5,7 @@ logback = "1.6.8" # https://mvnrepository.com/artifact/ch.qos.logback/logback-cl
 caffeine = "3.3.1" # https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
 exposed = "1.6.1" # https://github.com/JetBrains/Exposed/releases
 sqlite = "3.54.1.0"
-sparkconfig = "1.2.0"
+sparkconfig = "1.3.0"
 
 kordex-plugin = "1.9.2" # https://docs.kordex.dev/bots/gradle-plugin/
 kordex-i18n-plugin = "1.1.1" # https://docs.kordex.dev/i18n/getting-started
