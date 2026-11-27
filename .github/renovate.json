@@ -3,6 +3,12 @@
 		{
 			"matchUpdateTypes": ["minor", "patch", "pin", "digest"],
 			"automerge": true
+		},
+		{
+			"matchManagers": [
+				"gradle-wrapper"
+			],
+			"enabled": false
 		}
 	]
 }
