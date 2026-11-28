@@ -5,7 +5,6 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.asChannelOfOrNull
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.channel.threads.edit
-import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.getChannelOf
 import dev.kord.core.behavior.interaction.response.EphemeralMessageInteractionResponseBehavior
 import dev.kord.core.behavior.interaction.response.edit
@@ -42,9 +41,11 @@ import me.brightspark.mdcbot.Config
 import me.brightspark.mdcbot.properties.Property
 import me.brightspark.mdcbot.service.PropertyService
 import me.brightspark.mdcbot.util.simpleEmbed
+import java.util.Locale
 import kotlin.collections.forEach
 import kotlin.collections.isNotEmpty
 import kotlin.enums.enumEntries
+import kotlin.math.ceil
 
 class ForumFormsExtension : BaseExtension("forum-forms") {
 	companion object {
@@ -65,7 +66,7 @@ class ForumFormsExtension : BaseExtension("forum-forms") {
 
 			action {
 				val jobData = JobData()
-				val response = respond { components { createJobMessageComponents(jobData) } }
+				val response = respond { createJobMessage(jobData, event.getLocale()) }
 				cachedJobData[response.message.id] = jobData.apply {
 					originalMessageId = response.id
 					interactionToken = response.token
@@ -88,31 +89,33 @@ class ForumFormsExtension : BaseExtension("forum-forms") {
 	}
 
 	@OptIn(UnsafeAPI::class)
-	private suspend fun ComponentContainer.createJobMessageComponents(jobData: JobData) {
-		enumSelectMenu(
-			Translations.ForumForms.Command.CreateJobPost.Components.ModLoader.label,
-			jobData.modLoader
-		) { it.modLoader = event.interaction.values.mapToEnum() }
-		enumSelectMenu(
-			Translations.ForumForms.Command.CreateJobPost.Components.WorkType.label,
-			jobData.workType
-		) { it.workType = event.interaction.values.mapToEnum() }
-		enumSelectMenu(
-			Translations.ForumForms.Command.CreateJobPost.Components.PayType.label,
-			jobData.payType
-		) { it.payType = event.interaction.values.mapToEnum() }
-		unsafeButton {
-			label = Translations.ForumForms.Command.CreateJobPost.Components.NextButton.label
-			if (jobData.isFirstPartDataAllSet()) enable() else disable()
-			initialResponse = InitialInteractionButtonResponse.None
-			action {
-				val locale = event.getLocale()
-				CreateJobThreadModal().let { modal ->
-					modal.sendAndAwait(locale, event.interaction) { modalInteraction ->
-						modalInteraction?.let {
-							val deferredUpdate = it.deferEphemeralMessageUpdate()
-							handleModalSubmit(deferredUpdate, modal, it, jobData)
-						} ?: cachedJobData.remove(jobData.originalMessageId!!)
+	private suspend fun MessageBuilder.createJobMessage(jobData: JobData, locale: Locale) {
+		content = Translations.ForumForms.Command.CreateJobPost.content.translateLocale(locale)
+		components {
+			enumSelectMenu(
+				Translations.ForumForms.Command.CreateJobPost.Components.ModLoader.label,
+				jobData.modLoader
+			) { it.modLoader = event.interaction.values.mapToEnum() }
+			enumSelectMenu(
+				Translations.ForumForms.Command.CreateJobPost.Components.WorkType.label,
+				jobData.workType
+			) { it.workType = event.interaction.values.mapToEnum() }
+			enumSelectMenu(
+				Translations.ForumForms.Command.CreateJobPost.Components.PayType.label,
+				jobData.payType
+			) { it.payType = event.interaction.values.mapToEnum() }
+			unsafeButton {
+				label = Translations.ForumForms.Command.CreateJobPost.Components.NextButton.label
+				if (jobData.isFirstPartDataAllSet()) enable() else disable()
+				initialResponse = InitialInteractionButtonResponse.None
+				action {
+					CreateJobThreadModal().let { modal ->
+						modal.sendAndAwait(event.getLocale(), event.interaction) { modalInteraction ->
+							modalInteraction?.let {
+								val deferredUpdate = it.deferEphemeralMessageUpdate()
+								handleModalSubmit(deferredUpdate, modal, it, jobData)
+							} ?: cachedJobData.remove(jobData.originalMessageId!!)
+						}
 					}
 				}
 			}
@@ -141,7 +144,7 @@ class ForumFormsExtension : BaseExtension("forum-forms") {
 		if (jobData.isFirstPartDataAllSet() == isButtonDisabled) {
 			context.edit {
 				components = null
-				components { createJobMessageComponents(jobData) }
+				createJobMessage(jobData, context.getLocale())
 			}
 		}
 	}
@@ -162,7 +165,7 @@ class ForumFormsExtension : BaseExtension("forum-forms") {
 
 		deferredUpdate.edit {
 			components = mutableListOf()
-			content = "Job post created: ${thread.mention}"
+			content = Translations.ForumForms.Command.CreateJobPost.created.translate(thread.mention)
 		}
 		cachedJobData.remove(jobData.originalMessageId!!)
 	}
@@ -176,30 +179,51 @@ class ForumFormsExtension : BaseExtension("forum-forms") {
 	): TextChannelThread =
 		channel.startPublicThread(modal.name.value!!) {
 			message {
-				content = """
-					**Author:** ${user.mention} (`${user.username}`)
-					**Name:** ${modal.name.value}
-					**Work Required:** ${jobData.workType.joinReadableNames()}
-					**MC Version:** ${modal.mcVersion.value}
-					**Mod Loader:** ${jobData.modLoader.joinReadableNames()}
-					**Pay Type:** ${jobData.payType.joinReadableNames()}
-					**AI Usage:** ${modal.aiUsage.value}
-					
-					**Details**:
-					${modal.details.value}
-				""".trimIndent()
+				content = Translations.ForumForms.Command.CreateJobPost.threadMessage.translateNamed(
+					"user-mention" to user.mention,
+					"user-name" to user.username,
+					"name" to modal.name.value,
+					"work-type" to jobData.workType.joinReadableNames(),
+					"mc-version" to modal.mcVersion.value,
+					"mod-loader" to jobData.modLoader.joinReadableNames(),
+					"pay-type" to jobData.payType.joinReadableNames(),
+					"ai-usage" to modal.aiUsage.value,
+					"details" to modal.details.value
+				)
 				images?.forEach { addFile(it.first, ChannelProvider { it.second }) }
 			}
-			jobData.workType.forEach { applyTag(it.tagId) }
-			jobData.modLoader.forEach { applyTag(it.tagId) }
-			jobData.payType.forEach { applyTag(it.tagId) }
+
+			val numModLoaders = jobData.modLoader.size
+			val numPayTypes = jobData.payType.size
+			val numWorkTypes = jobData.workType.size
+			if (numModLoaders + numPayTypes + numWorkTypes <= 5) {
+				jobData.modLoader.forEach { applyTag(it.tagId) }
+				jobData.payType.forEach { applyTag(it.tagId) }
+				jobData.workType.forEach { applyTag(it.tagId) }
+			} else if (numWorkTypes >= 3) {
+				applyTag(jobData.modLoader.first().tagId)
+				applyTag(jobData.payType.first().tagId)
+				jobData.workType.take(3).forEach { applyTag(it.tagId) }
+			} else {
+				val remaining = 5 - numWorkTypes
+				val remainingHalf = ceil(remaining.toFloat() / 2F).toInt()
+				if (numModLoaders >= numPayTypes) {
+					jobData.modLoader.take(remainingHalf).forEach { applyTag(it.tagId) }
+					jobData.payType.take(remaining - remainingHalf).forEach { applyTag(it.tagId) }
+				} else {
+					jobData.modLoader.take(remaining - remainingHalf).forEach { applyTag(it.tagId) }
+					jobData.payType.take(remainingHalf).forEach { applyTag(it.tagId) }
+				}
+				jobData.workType.forEach { applyTag(it.tagId) }
+			}
+
 			reason = "New job post by ${user.username}"
 		}.apply {
 			createMessage { createThreadManagementMessage(false) }
 		}
 
 	private fun MessageBuilder.createThreadManagementMessage(isThreadLocked: Boolean) {
-		simpleEmbed("Author thread management:")
+		simpleEmbed(Translations.ForumForms.Command.CreateJobPost.ManagementMessage.content.translate())
 		actionRow {
 			if (isThreadLocked)
 				interactionButton(ButtonStyle.Primary, buttonLockId) {

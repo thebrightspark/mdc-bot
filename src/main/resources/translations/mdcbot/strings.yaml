@@ -119,6 +119,11 @@ forum-forms:
       desc: "Creates a new job post in #jobs-and-requests"
       modal:
         title: Create Job Post
+      content: >
+        Please note that due to the limitation of up to 5 tags per forum thread, not all entered values will be added
+        as tags to your post if you've provided more than 5 total. However they will all be included within the post
+        message itself.
+      created: "Job post created: {0}"
       components:
         name:
           label: Job Title
@@ -160,7 +165,19 @@ forum-forms:
         images:
           label: Images
           desc: "[Optional] Images to accompany your job post"
+      thread-message: |
+        **Author:** {$user-mention} (`{$user-name}`)
+        **Name:** {$name}
+        **Work Required:** {$work-type}
+        **MC Version:** {$mc-version}
+        **Mod Loader:** {$mod-loader}
+        **Pay Type:** {$pay-type}
+        **AI Usage:** {$ai-usage}
+        
+        **Details**:
+        {$details}
       management-message:
+        content: "Author thread management:"
         lock-button: Lock thread
         unlock-button: Unlock thread
 
